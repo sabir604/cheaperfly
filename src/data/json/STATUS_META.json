@@ -1,0 +1,30 @@
+{
+  "confirmed": {
+    "label": "Confirmed",
+    "tone": "success"
+  },
+  "ticketed": {
+    "label": "Ticketed",
+    "tone": "success"
+  },
+  "pending": {
+    "label": "Pending",
+    "tone": "warning"
+  },
+  "cancellation_requested": {
+    "label": "Cancellation requested",
+    "tone": "warning"
+  },
+  "cancelled": {
+    "label": "Cancelled",
+    "tone": "danger"
+  },
+  "refunded": {
+    "label": "Refunded",
+    "tone": "neutral"
+  },
+  "completed": {
+    "label": "Completed",
+    "tone": "neutral"
+  }
+}

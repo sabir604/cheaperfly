@@ -1,0 +1,205 @@
+@import "tailwindcss";
+
+/*
+ * Cheaperfly design tokens — recovered from the original production CSS.
+ * Palettes beyond Tailwind's defaults: brand (primary blue), navy (dark UI), gold (premium),
+ * umrah (green), and the page canvas.
+ */
+@theme {
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+
+  --color-canvas: #f5f7fb;
+
+  --color-brand-50: #eaf3ff;
+  --color-brand-100: #d6e7ff;
+  --color-brand-200: #adcfff;
+  --color-brand-300: #78b0ff;
+  --color-brand-400: #3d8bfa;
+  --color-brand-500: #0b6ff4;
+  --color-brand-600: #0a5ed6;
+  --color-brand-700: #094cab;
+  --color-brand-800: #0a3d85;
+
+  --color-navy-100: #dce6f4;
+  --color-navy-300: #8ba9d3;
+  --color-navy-700: #0d2f61;
+  --color-navy-800: #0a2650;
+  --color-navy-900: #071f42;
+  --color-navy-950: #04142d;
+
+  --color-gold-50: #fbf6ea;
+  --color-gold-100: #f5ead3;
+  --color-gold-300: #dcbb7c;
+  --color-gold-400: #cfa45a;
+  --color-gold-500: #b8893b;
+  --color-gold-600: #966d2a;
+
+  --color-umrah-50: #eef8f4;
+  --color-umrah-100: #d5ede4;
+  --color-umrah-200: #a9d9c8;
+  --color-umrah-600: #147363;
+  --color-umrah-700: #0f5f4e;
+  --color-umrah-800: #0b4d3f;
+  --color-umrah-900: #06322a;
+  --color-umrah-950: #04231d;
+
+  --shadow-card: 0 1px 2px #071f420d, 0 4px 14px -6px #071f421a;
+  --shadow-lift: 0 10px 28px -10px #071f4247;
+  --shadow-pop: 0 12px 32px -8px #071f4238, 0 2px 6px #071f4214;
+
+  --animate-pop: pop 0.18s ease-out both;
+  --animate-shimmer: shimmer 1.6s linear infinite;
+  --animate-fade-up: fade-up 0.3s ease-out both;
+
+  @keyframes shimmer {
+    0% {
+      background-position: 200% 0;
+    }
+    to {
+      background-position: -200% 0;
+    }
+  }
+  @keyframes fade-up {
+    0% {
+      opacity: 0;
+      transform: translateY(8px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  @keyframes pop {
+    0% {
+      opacity: 0;
+      transform: scale(0.97) translateY(-4px);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1) translateY(0);
+    }
+  }
+}
+
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+    scroll-behavior: smooth;
+  }
+  body {
+    background: var(--color-canvas);
+    color: var(--color-slate-800);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+    font-size: 14px;
+    line-height: 1.5;
+  }
+  h1,
+  h2,
+  h3,
+  h4 {
+    color: var(--color-navy-900);
+    letter-spacing: -0.015em;
+  }
+  button,
+  [role="button"],
+  a {
+    -webkit-tap-highlight-color: transparent;
+  }
+  button:not(:disabled),
+  [role="button"]:not(:disabled) {
+    cursor: pointer;
+  }
+  :focus-visible {
+    outline: 2px solid var(--color-brand-500);
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+  ::selection {
+    background: var(--color-brand-100);
+  }
+  input[type="number"]::-webkit-inner-spin-button {
+    opacity: 0.4;
+  }
+}
+
+@layer components {
+  .container-page {
+    width: 100%;
+    max-width: 1240px;
+    margin-inline: auto;
+    padding-inline: 16px;
+  }
+  @media (min-width: 640px) {
+    .container-page {
+      padding-inline: 24px;
+    }
+  }
+  @media (min-width: 1024px) {
+    .container-page {
+      padding-inline: 32px;
+    }
+  }
+  .tnum {
+    font-variant-numeric: tabular-nums;
+  }
+  .skeleton {
+    animation: var(--animate-shimmer);
+    background: linear-gradient(100deg, #e8edf5 30%, #f5f8fc 50%, #e8edf5 70%) 0 0 / 200% 100%;
+    border-radius: 6px;
+  }
+  .eyebrow {
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    font-size: 12px;
+    font-weight: 600;
+  }
+  .scrollbar-none {
+    scrollbar-width: none;
+  }
+  .scrollbar-none::-webkit-scrollbar {
+    display: none;
+  }
+  .img-scrim::after {
+    content: "";
+    pointer-events: none;
+    background: linear-gradient(#04142d00 0%, #04142d26 45%, #04142dc7 100%);
+    position: absolute;
+    inset: 0;
+  }
+  .dotted-line {
+    background-image: linear-gradient(to right, var(--color-slate-300) 50%, transparent 50%);
+    background-repeat: repeat-x;
+    background-size: 6px 1px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  ::before,
+  ::after {
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
+}
+
+@media print {
+  .no-print {
+    display: none !important;
+  }
+  body {
+    background: #fff !important;
+  }
+  .print-page {
+    box-shadow: none !important;
+    border: 0 !important;
+    max-width: none !important;
+    margin: 0 !important;
+  }
+  @page {
+    margin: 12mm;
+  }
+}

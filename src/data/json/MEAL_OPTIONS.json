@@ -1,0 +1,53 @@
+[
+  {
+    "id": "standard",
+    "label": "Standard meal",
+    "code": "—",
+    "description": "Chef's choice of the day, served with the main service",
+    "price": 0
+  },
+  {
+    "id": "halal",
+    "label": "Halal meal",
+    "code": "MOML",
+    "description": "Certified halal preparation, sealed and served first",
+    "price": 0
+  },
+  {
+    "id": "vegetarian",
+    "label": "Vegetarian",
+    "code": "VGML",
+    "description": "Lacto-ovo vegetarian, no meat or fish",
+    "price": 0
+  },
+  {
+    "id": "vegan",
+    "label": "Vegan",
+    "code": "VVML",
+    "description": "Fully plant-based, no dairy or egg",
+    "price": 0
+  },
+  {
+    "id": "gluten_free",
+    "label": "Gluten-free",
+    "code": "GFML",
+    "description": "Prepared without wheat, rye, barley or oats",
+    "price": 0
+  },
+  {
+    "id": "child",
+    "label": "Child meal",
+    "code": "CHML",
+    "description": "Smaller portions with familiar favourites and a treat",
+    "for": "child",
+    "price": 0
+  },
+  {
+    "id": "infant",
+    "label": "Infant / baby meal",
+    "code": "BBML",
+    "description": "Purees and baby food (bring milk/formula separately)",
+    "for": "infant",
+    "price": 0
+  }
+]

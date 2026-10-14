@@ -1,0 +1,149 @@
+{
+  "legacy": [
+    {
+      "mult": 1,
+      "cabinBag": "1 × 7 kg",
+      "checkedBag": {
+        "pieces": 1,
+        "kg": 23
+      },
+      "seatSelection": "paid",
+      "changeFee": null,
+      "refundFee": null,
+      "meal": true,
+      "perks": [
+        "Earn 25% miles"
+      ]
+    },
+    {
+      "mult": 1.24,
+      "cabinBag": "1 × 7 kg",
+      "checkedBag": {
+        "pieces": 1,
+        "kg": 30
+      },
+      "seatSelection": "standard_free",
+      "changeFee": 75,
+      "refundFee": 130,
+      "meal": true,
+      "perks": [
+        "Earn 100% miles",
+        "Free standard seat"
+      ]
+    },
+    {
+      "mult": 1.58,
+      "cabinBag": "1 × 10 kg",
+      "checkedBag": {
+        "pieces": 2,
+        "kg": 23
+      },
+      "seatSelection": "premium_free",
+      "changeFee": 0,
+      "refundFee": 0,
+      "meal": true,
+      "perks": [
+        "Earn 125% miles",
+        "Free preferred seat",
+        "Priority check-in & boarding"
+      ]
+    }
+  ],
+  "light": [
+    {
+      "mult": 1,
+      "cabinBag": "1 × 10 kg + personal item",
+      "checkedBag": {
+        "pieces": 0,
+        "kg": 0
+      },
+      "seatSelection": "paid",
+      "changeFee": null,
+      "refundFee": null,
+      "meal": false,
+      "perks": [
+        "Hand baggage only"
+      ]
+    },
+    {
+      "mult": 1.21,
+      "cabinBag": "1 × 10 kg + personal item",
+      "checkedBag": {
+        "pieces": 1,
+        "kg": 23
+      },
+      "seatSelection": "paid",
+      "changeFee": 65,
+      "refundFee": null,
+      "meal": true,
+      "perks": [
+        "Earn full miles"
+      ]
+    },
+    {
+      "mult": 1.62,
+      "cabinBag": "1 × 10 kg + personal item",
+      "checkedBag": {
+        "pieces": 2,
+        "kg": 23
+      },
+      "seatSelection": "standard_free",
+      "changeFee": 0,
+      "refundFee": 60,
+      "meal": true,
+      "perks": [
+        "Earn 150% miles",
+        "Free standard seat",
+        "Fast-track boarding"
+      ]
+    }
+  ],
+  "lowcost": [
+    {
+      "mult": 1,
+      "cabinBag": "1 × 7 kg",
+      "checkedBag": {
+        "pieces": 0,
+        "kg": 0
+      },
+      "seatSelection": "paid",
+      "changeFee": null,
+      "refundFee": null,
+      "meal": false,
+      "perks": [
+        "Hand baggage only"
+      ]
+    },
+    {
+      "mult": 1.33,
+      "cabinBag": "1 × 7 kg",
+      "checkedBag": {
+        "pieces": 1,
+        "kg": 20
+      },
+      "seatSelection": "paid",
+      "changeFee": 45,
+      "refundFee": null,
+      "meal": true,
+      "perks": [
+        "Meal included"
+      ]
+    },
+    {
+      "mult": 1.95,
+      "cabinBag": "1 × 10 kg",
+      "checkedBag": {
+        "pieces": 2,
+        "kg": 20
+      },
+      "seatSelection": "standard_free",
+      "changeFee": 0,
+      "refundFee": 70,
+      "meal": true,
+      "perks": [
+        "Priority boarding",
+        "Free standard seat"
+      ]
+    }
+  ]
+}

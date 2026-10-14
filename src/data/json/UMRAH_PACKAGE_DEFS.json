@@ -1,0 +1,410 @@
+[
+  {
+    "slug": "essential-umrah-7-nights",
+    "name": "Essential Umrah — 7 Nights",
+    "tagline": "Everything you need for a focused, affordable Umrah.",
+    "category": "essential",
+    "mk": 4,
+    "md": 3,
+    "makkah": "aziziyah-comfort",
+    "madinah": "taibah-comfort-inn",
+    "makkahOptions": [
+      "aziziyah-comfort",
+      "ibrahim-khalil-grand"
+    ],
+    "madinahOptions": [
+      "taibah-comfort-inn",
+      "al-salam-palace"
+    ],
+    "base": 749,
+    "meal": "breakfast",
+    "mealLabel": "Breakfast daily",
+    "images": [
+      "/images/makkah-kaaba.jpg",
+      "/images/madinah-nabawi.jpg",
+      "/images/room-grey.jpg",
+      "/images/quran-navy.jpg"
+    ],
+    "rating": 8.2,
+    "reviews": 412,
+    "group": "Up to 45 pilgrims",
+    "flights": [
+      "tk-ist",
+      "qr-doh",
+      "sv-direct"
+    ],
+    "transfers": [
+      "shared-coach",
+      "haramain-train",
+      "private-car"
+    ],
+    "defaultTransfer": "shared-coach",
+    "highlights": [
+      "Scheduled shuttle to both Haramain",
+      "Umrah visa processing included",
+      "Arabic & English speaking guide",
+      "Small-group departures"
+    ],
+    "depStart": 18,
+    "depGap": 7,
+    "depCount": 12
+  },
+  {
+    "slug": "value-umrah-10-nights",
+    "name": "Value Umrah — 10 Nights",
+    "tagline": "More time in the Haramain without the premium price.",
+    "category": "essential",
+    "mk": 6,
+    "md": 4,
+    "makkah": "ibrahim-khalil-grand",
+    "madinah": "al-salam-palace",
+    "makkahOptions": [
+      "aziziyah-comfort",
+      "ibrahim-khalil-grand",
+      "safa-heights"
+    ],
+    "madinahOptions": [
+      "taibah-comfort-inn",
+      "al-salam-palace",
+      "quba-grand"
+    ],
+    "base": 979,
+    "meal": "breakfast",
+    "mealLabel": "Breakfast daily",
+    "images": [
+      "/images/makkah-clocktower.jpg",
+      "/images/madinah-night.jpg",
+      "/images/room-white.jpg",
+      "/images/quran-gold.jpg"
+    ],
+    "rating": 8.4,
+    "reviews": 268,
+    "group": "Up to 40 pilgrims",
+    "flights": [
+      "tk-ist",
+      "qr-doh",
+      "sv-direct",
+      "ba-direct"
+    ],
+    "transfers": [
+      "shared-coach",
+      "haramain-train",
+      "private-car"
+    ],
+    "defaultTransfer": "shared-coach",
+    "highlights": [
+      "6 nights Makkah / 4 nights Madinah",
+      "Free shuttle to the Haram",
+      "Makkah & Madinah ziyarat available",
+      "Visa included"
+    ],
+    "depStart": 24,
+    "depGap": 10,
+    "depCount": 10
+  },
+  {
+    "slug": "comfort-umrah-7-nights",
+    "name": "Comfort Umrah — 7 Nights",
+    "tagline": "Four-star stays within a short walk of the Haram and the Prophet's Mosque.",
+    "category": "comfort",
+    "mk": 4,
+    "md": 3,
+    "makkah": "safa-heights",
+    "madinah": "quba-grand",
+    "makkahOptions": [
+      "ibrahim-khalil-grand",
+      "safa-heights",
+      "marwa-gate-hotel"
+    ],
+    "madinahOptions": [
+      "al-salam-palace",
+      "quba-grand",
+      "nabawi-gate-royal"
+    ],
+    "base": 1149,
+    "meal": "half_board",
+    "mealLabel": "Breakfast & dinner daily",
+    "images": [
+      "/images/madinah-nabawi.jpg",
+      "/images/makkah-clocktower.jpg",
+      "/images/room-window.jpg",
+      "/images/hotel-lounge.jpg"
+    ],
+    "rating": 8.7,
+    "reviews": 537,
+    "group": "Up to 30 pilgrims",
+    "flights": [
+      "sv-direct",
+      "ba-direct",
+      "tk-ist",
+      "qr-doh"
+    ],
+    "transfers": [
+      "shared-coach",
+      "haramain-train",
+      "private-car",
+      "private-suv"
+    ],
+    "defaultTransfer": "haramain-train",
+    "highlights": [
+      "Half board included",
+      "Hotels within 450 m of the Haram",
+      "Haramain train transfer",
+      "Dedicated UK-based coordinator"
+    ],
+    "depStart": 16,
+    "depGap": 7,
+    "depCount": 14
+  },
+  {
+    "slug": "family-umrah-10-nights",
+    "name": "Family Umrah — 10 Nights",
+    "tagline": "Family rooms, half board and a slower pace for travelling with children and parents.",
+    "category": "comfort",
+    "mk": 5,
+    "md": 5,
+    "makkah": "safa-heights",
+    "madinah": "quba-grand",
+    "makkahOptions": [
+      "safa-heights",
+      "marwa-gate-hotel"
+    ],
+    "madinahOptions": [
+      "quba-grand",
+      "nabawi-gate-royal"
+    ],
+    "base": 1349,
+    "meal": "half_board",
+    "mealLabel": "Breakfast & dinner daily",
+    "images": [
+      "/images/makkah-kaaba.jpg",
+      "/images/madinah-night.jpg",
+      "/images/room-tufted.jpg",
+      "/images/dining.jpg"
+    ],
+    "rating": 9,
+    "reviews": 344,
+    "group": "Family groups of up to 24",
+    "flights": [
+      "sv-direct",
+      "ba-direct",
+      "tk-ist"
+    ],
+    "transfers": [
+      "haramain-train",
+      "private-car",
+      "private-suv"
+    ],
+    "defaultTransfer": "private-car",
+    "highlights": [
+      "Child price from 75% of adult",
+      "Family & connecting rooms",
+      "Private transfers as standard",
+      "Kid-friendly ziyarat pacing"
+    ],
+    "depStart": 20,
+    "depGap": 8,
+    "depCount": 10
+  },
+  {
+    "slug": "premium-haram-view-10-nights",
+    "name": "Premium Haram View — 10 Nights",
+    "tagline": "Five-star stays at the gates of the Haram and the Prophet's Mosque.",
+    "category": "premium",
+    "mk": 6,
+    "md": 4,
+    "makkah": "marwa-gate-hotel",
+    "madinah": "nabawi-gate-royal",
+    "makkahOptions": [
+      "safa-heights",
+      "marwa-gate-hotel",
+      "ajyad-royal-suites"
+    ],
+    "madinahOptions": [
+      "quba-grand",
+      "nabawi-gate-royal"
+    ],
+    "base": 1849,
+    "meal": "half_board",
+    "mealLabel": "Breakfast & dinner daily",
+    "images": [
+      "/images/makkah-clocktower.jpg",
+      "/images/madinah-nabawi.jpg",
+      "/images/hotel-lounge.jpg",
+      "/images/room-classic.jpg"
+    ],
+    "rating": 9.1,
+    "reviews": 291,
+    "group": "Up to 20 pilgrims",
+    "flights": [
+      "sv-direct",
+      "ba-direct",
+      "qr-doh"
+    ],
+    "transfers": [
+      "haramain-train",
+      "private-car",
+      "private-suv"
+    ],
+    "defaultTransfer": "haramain-train",
+    "highlights": [
+      "Five-star hotels 120–260 m from the Masjid",
+      "Business-class upgrade option on request",
+      "Private scholar-led orientation available",
+      "24/7 in-country concierge"
+    ],
+    "depStart": 22,
+    "depGap": 9,
+    "depCount": 10
+  },
+  {
+    "slug": "extended-umrah-14-nights",
+    "name": "Extended Umrah — 14 Nights",
+    "tagline": "Two unhurried weeks for repeat Umrah, Itikaf and time in Madinah.",
+    "category": "premium",
+    "mk": 8,
+    "md": 6,
+    "makkah": "safa-heights",
+    "madinah": "nabawi-gate-royal",
+    "makkahOptions": [
+      "safa-heights",
+      "marwa-gate-hotel",
+      "ajyad-royal-suites"
+    ],
+    "madinahOptions": [
+      "quba-grand",
+      "nabawi-gate-royal"
+    ],
+    "base": 2199,
+    "meal": "half_board",
+    "mealLabel": "Breakfast & dinner daily",
+    "images": [
+      "/images/makkah-kaaba.jpg",
+      "/images/madinah-nabawi.jpg",
+      "/images/room-tufted.jpg",
+      "/images/quran-gold.jpg"
+    ],
+    "rating": 9.2,
+    "reviews": 158,
+    "group": "Up to 20 pilgrims",
+    "flights": [
+      "sv-direct",
+      "ba-direct",
+      "tk-ist",
+      "qr-doh"
+    ],
+    "transfers": [
+      "haramain-train",
+      "private-car",
+      "private-suv"
+    ],
+    "defaultTransfer": "haramain-train",
+    "highlights": [
+      "8 nights Makkah / 6 nights Madinah",
+      "Both ziyarat tours included",
+      "Late check-out on final day",
+      "Free Ihram kit"
+    ],
+    "depStart": 30,
+    "depGap": 14,
+    "depCount": 8
+  },
+  {
+    "slug": "royal-umrah-7-nights",
+    "name": "Royal Umrah — 7 Nights",
+    "tagline": "Kaaba-view suites, private transfers and a personal Umrah concierge.",
+    "category": "luxury",
+    "mk": 4,
+    "md": 3,
+    "makkah": "ajyad-royal-suites",
+    "madinah": "nabawi-gate-royal",
+    "makkahOptions": [
+      "marwa-gate-hotel",
+      "ajyad-royal-suites"
+    ],
+    "madinahOptions": [
+      "nabawi-gate-royal"
+    ],
+    "base": 2749,
+    "meal": "full_board",
+    "mealLabel": "Full board daily",
+    "images": [
+      "/images/makkah-clocktower.jpg",
+      "/images/madinah-night.jpg",
+      "/images/room-classic.jpg",
+      "/images/hotel-lounge.jpg"
+    ],
+    "rating": 9.5,
+    "reviews": 96,
+    "group": "Private / max 8",
+    "flights": [
+      "ba-direct",
+      "sv-direct"
+    ],
+    "transfers": [
+      "private-car",
+      "private-suv"
+    ],
+    "defaultTransfer": "private-suv",
+    "highlights": [
+      "Kaaba-view rooms (on request)",
+      "Private SUV transfers",
+      "Full board with iftar/suhoor",
+      "Personal Umrah concierge"
+    ],
+    "depStart": 26,
+    "depGap": 12,
+    "depCount": 8
+  },
+  {
+    "slug": "last-ten-nights-ramadan-2027",
+    "name": "Last Ten Nights of Ramadan",
+    "tagline": "Spend Laylat al-Qadr in Makkah with Itikaf assistance and Ramadan meals.",
+    "category": "premium",
+    "mk": 7,
+    "md": 3,
+    "makkah": "marwa-gate-hotel",
+    "madinah": "quba-grand",
+    "makkahOptions": [
+      "safa-heights",
+      "marwa-gate-hotel",
+      "ajyad-royal-suites"
+    ],
+    "madinahOptions": [
+      "quba-grand",
+      "nabawi-gate-royal"
+    ],
+    "base": 2599,
+    "meal": "half_board",
+    "mealLabel": "Suhoor & iftar daily",
+    "images": [
+      "/images/makkah-kaaba.jpg",
+      "/images/makkah-clocktower.jpg",
+      "/images/quran-gold.jpg",
+      "/images/madinah-night.jpg"
+    ],
+    "rating": 9,
+    "reviews": 74,
+    "group": "Up to 25 pilgrims",
+    "flights": [
+      "sv-direct",
+      "ba-direct",
+      "tk-ist"
+    ],
+    "transfers": [
+      "haramain-train",
+      "private-car",
+      "private-suv"
+    ],
+    "defaultTransfer": "haramain-train",
+    "highlights": [
+      "Suhoor and iftar included",
+      "Itikaf coordination support",
+      "Special Ramadan departures only",
+      "Priority Haram-entry guidance"
+    ],
+    "depStart": 0,
+    "depGap": 3,
+    "depCount": 4
+  }
+]

@@ -1,0 +1,234 @@
+[
+  {
+    "slug": "flights",
+    "title": "Flights",
+    "icon": "plane",
+    "blurb": "Searching, fares, passengers and check-in.",
+    "articles": [
+      {
+        "q": "How do I search for a multi-city trip?",
+        "a": "On the Flights tab choose Multi-city, enter each leg's airports and date, and use Add another flight for up to five flights. Each leg must be on or after the previous one."
+      },
+      {
+        "q": "What are fare families like Saver and Flex?",
+        "a": "Airlines sell the same seat with different rules. Saver fares are cheapest but usually have no changes or refunds and may exclude checked baggage. Flex fares add baggage, seat selection and change options. We show all fares side by side after you choose a flight."
+      },
+      {
+        "q": "When does online check-in open?",
+        "a": "Most airlines open online check-in 24–48 hours before departure. Use your airline PNR (shown on your booking) on the airline's website or app. Check-in at the airport closes about 60 minutes before international departures."
+      },
+      {
+        "q": "Do children and infants need their own ticket?",
+        "a": "Children aged 2–11 need their own seat and ticket at 75% of the adult fare plus taxes. Infants under 2 travel on an adult's lap for 10% of the fare plus reduced taxes. Each adult can travel with one infant."
+      },
+      {
+        "q": "What passport validity do I need?",
+        "a": "Many destinations, including the UAE and Saudi Arabia, require at least six months' validity from your date of return and blank pages. We warn you at booking if a passport is close to expiry."
+      }
+    ]
+  },
+  {
+    "slug": "hotels",
+    "title": "Hotels",
+    "icon": "hotel",
+    "blurb": "Rooms, rates, check-in and hotel policies.",
+    "articles": [
+      {
+        "q": "What is the difference between Room only, Breakfast included and Flexible rates?",
+        "a": "Room only is the cheapest and is usually non-refundable. Breakfast included adds a buffet breakfast and often free cancellation up to a few days before arrival. Flexible rates let you cancel closer to arrival and often pay at the hotel."
+      },
+      {
+        "q": "When will I be charged for a hotel?",
+        "a": "Pay-now rates are charged when you book. Flexible pay-later rates only guarantee the booking with your card and you settle up at the hotel. The review page states clearly which applies."
+      },
+      {
+        "q": "Can I request a late check-in or early check-in?",
+        "a": "Yes. Add it under special requests when booking, or later from Manage Booking. Requests are passed to the hotel and are subject to availability."
+      },
+      {
+        "q": "What is the Tourism Dirham fee in Dubai?",
+        "a": "Dubai hotels charge a per-room, per-night Tourism Dirham fee (typically AED 10–20) payable directly at the property. It is stated on the hotel page."
+      },
+      {
+        "q": "Why doesn't a room show for my group size?",
+        "a": "Each room type has a maximum occupancy. Try adding another room or choose a Family Suite. Guests under 18 count towards room capacity."
+      }
+    ]
+  },
+  {
+    "slug": "umrah",
+    "title": "Umrah",
+    "icon": "moon",
+    "blurb": "Packages, visas, hotels and on-the-ground support.",
+    "articles": [
+      {
+        "q": "Is the Umrah visa included?",
+        "a": "Yes. Every Cheaperfly Umrah package includes Umrah visa processing and the Saudi e-visa fee. We'll contact you within 24 hours of booking with a passport checklist."
+      },
+      {
+        "q": "What documents do I need?",
+        "a": "A passport valid for at least six months from your return date, a passport-style photo, and (where required) a valid ACWY meningitis vaccination certificate. Requirements can change, so we confirm current rules with you after booking."
+      },
+      {
+        "q": "Can women travel without a mahram?",
+        "a": "Under current Saudi regulations adult women may perform Umrah without a mahram. Children under 18 must travel with a parent or guardian. Regulations can change; our team will confirm before you travel."
+      },
+      {
+        "q": "How far are the hotels from the Haram?",
+        "a": "Every package and hotel lists the walking distance to Masjid al-Haram in Makkah and Al-Masjid an-Nabawi in Madinah. Value options use free shuttles."
+      },
+      {
+        "q": "Can I change hotel, room type or transfers?",
+        "a": "Yes, in the customise step before you pay. After booking you can request changes from your booking page and we will confirm availability and any price difference."
+      },
+      {
+        "q": "How do I get Rawdah permits in Madinah?",
+        "a": "Rawdah visits are booked through the Nusuk app under the authorities' rules. Our team helps you book a slot but availability is set by the authorities."
+      }
+    ]
+  },
+  {
+    "slug": "bookings",
+    "title": "Bookings",
+    "icon": "ticket",
+    "blurb": "Finding, viewing and managing your bookings.",
+    "articles": [
+      {
+        "q": "How do I find my booking without an account?",
+        "a": "Use Manage Booking with your booking reference (starts with CF-) or airline PNR and the last name of the lead traveller. You can download tickets, change extras and contact support from there."
+      },
+      {
+        "q": "I can't see my booking in my account",
+        "a": "Bookings appear in your account if they were made while signed in or with the same email address as your account. If you booked with a different email, use Manage Booking to find it."
+      },
+      {
+        "q": "Where are my e-tickets and invoices?",
+        "a": "Open your booking and use Download e-ticket or Invoice, or find them all under Documents in your account. You can print or save them as PDF."
+      },
+      {
+        "q": "Can I add a traveller after booking?",
+        "a": "Travellers can't be added to an existing booking. Book the additional traveller separately, or request a change and we'll advise the best option."
+      }
+    ]
+  },
+  {
+    "slug": "payments",
+    "title": "Payments",
+    "icon": "card",
+    "blurb": "Cards, wallets, receipts and payment problems.",
+    "articles": [
+      {
+        "q": "Which payment methods do you accept?",
+        "a": "Visa, Mastercard and American Express cards, plus Apple Pay and Google Pay. In this prototype wallets are demo options and no real payment is taken."
+      },
+      {
+        "q": "Why was my payment declined?",
+        "a": "Cards are declined for many reasons: insufficient funds, incorrect details, a bank security check or a spending limit. No money is taken when a payment fails. Try another card or contact your bank."
+      },
+      {
+        "q": "Will I be charged in my display currency?",
+        "a": "You are charged in the currency shown at checkout. Prices are converted at an indicative rate when you book, and your bank may apply its own exchange fees."
+      },
+      {
+        "q": "How do I get an invoice or receipt?",
+        "a": "Every booking has a tax invoice available from the booking page and the Documents section. It lists the fare, taxes, extras, service fee and payment method."
+      }
+    ]
+  },
+  {
+    "slug": "changes",
+    "title": "Changes",
+    "icon": "calendar",
+    "blurb": "Changing dates, names, seats, meals and baggage.",
+    "articles": [
+      {
+        "q": "Can I change my flight dates?",
+        "a": "It depends on your fare. Flexible fares allow changes for a small fee (or free); Saver fares usually do not. Submit a change request from your booking and we'll come back with airline options and any fare difference."
+      },
+      {
+        "q": "How do I add baggage or change my seat?",
+        "a": "Open Manage Booking. Add baggage or choose seats yourself — we show the price and charge the difference to your original card after you confirm."
+      },
+      {
+        "q": "Can I correct a spelling mistake in a name?",
+        "a": "Minor corrections are usually possible through the airline. Raise a change request as soon as possible with your correct passport details; full name changes may not be allowed."
+      },
+      {
+        "q": "How do I change a hotel booking?",
+        "a": "Request a change from your booking. Free-cancellation rates can be cancelled and rebooked; non-refundable rates usually cannot be changed."
+      }
+    ]
+  },
+  {
+    "slug": "refunds",
+    "title": "Refunds",
+    "icon": "undo",
+    "blurb": "Cancellations, refund timelines and statuses.",
+    "articles": [
+      {
+        "q": "How do I cancel a booking or ask for a refund?",
+        "a": "Open your booking and choose Request cancellation or Request refund. Select who is affected, give a reason and review the estimated refund before submitting. You'll receive a case reference such as RF-12093."
+      },
+      {
+        "q": "How long do refunds take?",
+        "a": "After a request is approved, refunds are issued to the original payment method and usually arrive within 5–10 working days, depending on your bank."
+      },
+      {
+        "q": "What do the refund statuses mean?",
+        "a": "Submitted: we've received it. Under review: we're checking fare rules with the supplier. Approved: the supplier agreed. Rejected: the conditions don't allow it. Processed: the money has been sent."
+      },
+      {
+        "q": "Why is my refund less than I paid?",
+        "a": "Non-refundable fares return only unused taxes, airlines and hotels may charge cancellation fees, and our service fee is not refundable. The estimate on the request page shows each deduction."
+      }
+    ]
+  },
+  {
+    "slug": "baggage",
+    "title": "Baggage",
+    "icon": "luggage",
+    "blurb": "Allowances, extra baggage and special items.",
+    "articles": [
+      {
+        "q": "What baggage is included in my fare?",
+        "a": "It's shown on every result and fare comparison. Cabin baggage is included on all fares; checked baggage varies. Saver and light fares often exclude a checked bag."
+      },
+      {
+        "q": "Is it cheaper to add baggage online?",
+        "a": "Yes. Adding baggage during booking or through Manage Booking is usually cheaper than paying at the airport."
+      },
+      {
+        "q": "Can I bring sports equipment or musical instruments?",
+        "a": "Often yes, but rules differ by airline. Contact support before booking and we'll confirm the airline's policy and any fee."
+      },
+      {
+        "q": "What is the limit for liquids in cabin baggage?",
+        "a": "Most airports allow containers up to 100 ml in a single transparent 1-litre bag. Rules vary and are set by airport security."
+      }
+    ]
+  },
+  {
+    "slug": "account",
+    "title": "Account",
+    "icon": "user",
+    "blurb": "Signing in, saved travellers and preferences.",
+    "articles": [
+      {
+        "q": "How do I create an account?",
+        "a": "Choose Register, enter your details and verify your email with the 6-digit code we send. You then get saved travellers, all bookings in one place and a 3% member saving."
+      },
+      {
+        "q": "I forgot my password",
+        "a": "Choose Forgot password on the sign-in page, enter your email and follow the reset link. Your password must have 8+ characters with upper and lower case letters and a number."
+      },
+      {
+        "q": "How do saved travellers work?",
+        "a": "Save passengers in your account (or during booking) and select them in one tap next time. Passport details are stored securely and can be edited or deleted at any time."
+      },
+      {
+        "q": "How do I change my currency or notification settings?",
+        "a": "Go to Preferences in your account. Changes save automatically."
+      }
+    ]
+  }
+]

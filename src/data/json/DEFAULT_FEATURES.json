@@ -1,0 +1,11 @@
+{
+  "flights": true,
+  "hotels": true,
+  "umrah": true,
+  "b2b": true,
+  "customerSignup": true,
+  "promoCodes": true,
+  "whatsappSupport": true,
+  "telephony": true,
+  "aiFeatures": true
+}

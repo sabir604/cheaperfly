@@ -1,0 +1,373 @@
+{
+  "homepage": {
+    "hero": {
+      "eyebrow": "Flights · Hotels · Umrah",
+      "titleLine1": "Travel further,",
+      "titleLine2": "pay less for it.",
+      "subtitle": "Compare fares across leading airlines, book hotels with free cancellation, and plan Umrah with visa and transfers included. No hidden fees, ever.",
+      "ctaLabel": "",
+      "ctaHref": "",
+      "image": "dubaiSkyline"
+    },
+    "banners": [],
+    "featuredDestinations": [
+      "DXB",
+      "IST*",
+      "JED",
+      "AUH",
+      "MED"
+    ],
+    "offers": [],
+    "sections": [
+      {
+        "id": "banners",
+        "visible": true
+      },
+      {
+        "id": "recent",
+        "visible": true
+      },
+      {
+        "id": "destinations",
+        "visible": true
+      },
+      {
+        "id": "offers",
+        "visible": true
+      },
+      {
+        "id": "deals",
+        "visible": true
+      },
+      {
+        "id": "hotels",
+        "visible": true
+      },
+      {
+        "id": "dubai",
+        "visible": true
+      },
+      {
+        "id": "umrah",
+        "visible": true
+      },
+      {
+        "id": "why",
+        "visible": true
+      },
+      {
+        "id": "inspiration",
+        "visible": true
+      },
+      {
+        "id": "support",
+        "visible": true
+      },
+      {
+        "id": "newsletter",
+        "visible": true
+      }
+    ]
+  },
+  "navigation": {
+    "items": [
+      {
+        "id": "flights",
+        "label": "Flights",
+        "href": "/flights",
+        "visible": true,
+        "feature": "flights"
+      },
+      {
+        "id": "hotels",
+        "label": "Hotels",
+        "href": "/hotels",
+        "visible": true,
+        "feature": "hotels"
+      },
+      {
+        "id": "umrah",
+        "label": "Umrah",
+        "href": "/umrah",
+        "visible": true,
+        "feature": "umrah"
+      },
+      {
+        "id": "manage",
+        "label": "Manage Booking",
+        "href": "/manage-booking",
+        "visible": true
+      },
+      {
+        "id": "help",
+        "label": "Help",
+        "href": "/help",
+        "visible": true
+      }
+    ]
+  },
+  "footer": {
+    "tagline": "Flights, hotels and Umrah packages at honest prices. Compare, book and manage your whole trip in one place.",
+    "showPaymentBadges": true,
+    "columns": [
+      {
+        "id": "flights",
+        "title": "Flights",
+        "links": [
+          {
+            "label": "Search flights",
+            "href": "/flights"
+          },
+          {
+            "label": "London to Dubai",
+            "href": "/flights/search?from=LON&to=DXB"
+          },
+          {
+            "label": "London to Istanbul",
+            "href": "/flights/search?from=LON&to=IST*"
+          },
+          {
+            "label": "London to Jeddah",
+            "href": "/flights/search?from=LON&to=JED"
+          },
+          {
+            "label": "Manchester to Dubai",
+            "href": "/flights/search?from=MAN&to=DXB"
+          }
+        ]
+      },
+      {
+        "id": "hotels",
+        "title": "Hotels",
+        "links": [
+          {
+            "label": "Search hotels",
+            "href": "/hotels"
+          },
+          {
+            "label": "Hotels in Dubai",
+            "href": "/hotels?dest=dubai"
+          },
+          {
+            "label": "Hotels in London",
+            "href": "/hotels?dest=london"
+          },
+          {
+            "label": "Hotels in Istanbul",
+            "href": "/hotels?dest=istanbul"
+          },
+          {
+            "label": "Hotels near the Haram",
+            "href": "/hotels?dest=makkah"
+          }
+        ]
+      },
+      {
+        "id": "umrah",
+        "title": "Umrah",
+        "links": [
+          {
+            "label": "Umrah packages",
+            "href": "/umrah/packages"
+          },
+          {
+            "label": "Ramadan Umrah",
+            "href": "/umrah/packages/last-ten-nights-ramadan-2027"
+          },
+          {
+            "label": "Family Umrah",
+            "href": "/umrah/packages/family-umrah-10-nights"
+          },
+          {
+            "label": "Umrah FAQs",
+            "href": "/umrah#faq"
+          }
+        ]
+      },
+      {
+        "id": "help",
+        "title": "Help & bookings",
+        "links": [
+          {
+            "label": "Help centre",
+            "href": "/help"
+          },
+          {
+            "label": "Manage a booking",
+            "href": "/manage-booking"
+          },
+          {
+            "label": "Baggage guide",
+            "href": "/help/baggage"
+          },
+          {
+            "label": "Refunds & changes",
+            "href": "/help/refunds"
+          },
+          {
+            "label": "Contact support",
+            "href": "/help/contact"
+          }
+        ]
+      },
+      {
+        "id": "company",
+        "title": "Company",
+        "links": [
+          {
+            "label": "About Cheaperfly",
+            "href": "/about"
+          },
+          {
+            "label": "Sign in",
+            "href": "/sign-in"
+          },
+          {
+            "label": "Create an account",
+            "href": "/sign-up"
+          },
+          {
+            "label": "Image credits",
+            "href": "/credits"
+          }
+        ]
+      },
+      {
+        "id": "legal",
+        "title": "Legal",
+        "links": [
+          {
+            "label": "Terms & conditions",
+            "href": "/legal/terms"
+          },
+          {
+            "label": "Privacy policy",
+            "href": "/legal/privacy"
+          },
+          {
+            "label": "Cookie policy",
+            "href": "/legal/cookies"
+          },
+          {
+            "label": "Refund policy",
+            "href": "/legal/refund-policy"
+          }
+        ]
+      }
+    ]
+  },
+  "announcement": {
+    "enabled": false,
+    "text": "",
+    "href": "",
+    "tone": "info",
+    "dismissible": true
+  },
+  "contact": {
+    "phone": "+44 20 4577 0142",
+    "phoneHours": "24/7",
+    "email": "support@cheaperfly.example",
+    "whatsapp": "+44 20 4577 0142",
+    "address": "",
+    "social": {
+      "facebook": "",
+      "instagram": "",
+      "x": "",
+      "youtube": ""
+    }
+  },
+  "faqs": [],
+  "policies": [
+    {
+      "id": "terms",
+      "title": "Terms & conditions",
+      "href": "/legal/terms",
+      "summary": "Terms of use and booking conditions.",
+      "lastReviewed": "2026-06-01"
+    },
+    {
+      "id": "privacy",
+      "title": "Privacy policy",
+      "href": "/legal/privacy",
+      "summary": "How personal data is collected and used.",
+      "lastReviewed": "2026-06-01"
+    },
+    {
+      "id": "cookies",
+      "title": "Cookie policy",
+      "href": "/legal/cookies",
+      "summary": "Cookies and similar technologies.",
+      "lastReviewed": "2026-06-01"
+    },
+    {
+      "id": "refund",
+      "title": "Refund policy",
+      "href": "/legal/refund-policy",
+      "summary": "Refund and cancellation rules.",
+      "lastReviewed": "2026-06-01"
+    }
+  ],
+  "branding": {
+    "displayName": "Cheaperfly",
+    "logoRef": "default-wordmark",
+    "faviconRef": "default-favicon",
+    "supportEmail": "support@cheaperfly.example",
+    "supportPhone": "+44 20 4577 0142",
+    "defaultLocale": "en-GB",
+    "defaultCurrency": "GBP"
+  },
+  "seo": {
+    "pages": [
+      {
+        "path": "/",
+        "title": "Cheaperfly — Flights, Hotels & Umrah",
+        "description": "Compare flights, book hotels and plan Umrah with Cheaperfly. Transparent prices, flexible fares and 24/7 support.",
+        "index": true,
+        "canonical": "",
+        "ogTitle": "Cheaperfly — Flights, Hotels & Umrah",
+        "ogDescription": "Travel further, pay less for it.",
+        "ogImage": "dubaiSkyline"
+      },
+      {
+        "path": "/flights",
+        "title": "Search flights",
+        "description": "Compare fares across leading airlines with all taxes shown upfront.",
+        "index": true,
+        "canonical": "",
+        "ogTitle": "Search flights",
+        "ogDescription": "Compare fares across airlines.",
+        "ogImage": "airWing"
+      },
+      {
+        "path": "/hotels",
+        "title": "Search hotels",
+        "description": "Book hotels with free cancellation on most stays.",
+        "index": true,
+        "canonical": "",
+        "ogTitle": "Search hotels",
+        "ogDescription": "Free cancellation on most stays.",
+        "ogImage": "hotelResortPalms"
+      },
+      {
+        "path": "/umrah",
+        "title": "Umrah packages",
+        "description": "Complete Umrah packages with visa, hotels and transfers included.",
+        "index": true,
+        "canonical": "",
+        "ogTitle": "Umrah packages",
+        "ogDescription": "Complete packages, visa included.",
+        "ogImage": "makkahKaaba"
+      },
+      {
+        "path": "/help",
+        "title": "Help centre",
+        "description": "Answers, guides and ways to contact Cheaperfly support.",
+        "index": true,
+        "canonical": "",
+        "ogTitle": "Help centre",
+        "ogDescription": "We're here 24/7.",
+        "ogImage": "flatlay"
+      }
+    ]
+  }
+}

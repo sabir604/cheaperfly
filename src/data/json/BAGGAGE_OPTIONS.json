@@ -1,0 +1,30 @@
+[
+  {
+    "id": "bag5",
+    "label": "+5 kg",
+    "kg": 5,
+    "price": 18,
+    "note": "Small top-up for a slightly heavier bag"
+  },
+  {
+    "id": "bag10",
+    "label": "+10 kg",
+    "kg": 10,
+    "price": 34,
+    "note": "Best value for souvenirs and shopping"
+  },
+  {
+    "id": "bag20",
+    "label": "+20 kg",
+    "kg": 20,
+    "price": 62,
+    "note": "A full extra checked bag allowance"
+  },
+  {
+    "id": "bag32",
+    "label": "Extra 32 kg bag",
+    "kg": 32,
+    "price": 89,
+    "note": "One additional heavy bag (max 32 kg)"
+  }
+]

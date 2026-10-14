@@ -1,0 +1,14 @@
+{
+  "quad": {
+    "label": "Quad room",
+    "sub": "Up to 4 sharing — best value"
+  },
+  "triple": {
+    "label": "Triple room",
+    "sub": "3 sharing — more space"
+  },
+  "double": {
+    "label": "Double room",
+    "sub": "2 sharing — most privacy"
+  }
+}

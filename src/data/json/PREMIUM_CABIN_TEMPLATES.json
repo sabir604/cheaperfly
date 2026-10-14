@@ -1,0 +1,163 @@
+{
+  "premium_economy": [
+    {
+      "mult": 1,
+      "cabinBag": "2 × 7 kg",
+      "checkedBag": {
+        "pieces": 2,
+        "kg": 23
+      },
+      "seatSelection": "standard_free",
+      "changeFee": 120,
+      "refundFee": null,
+      "meal": true,
+      "perks": [
+        "Extra legroom",
+        "Priority boarding"
+      ]
+    },
+    {
+      "mult": 1.2,
+      "cabinBag": "2 × 7 kg",
+      "checkedBag": {
+        "pieces": 2,
+        "kg": 23
+      },
+      "seatSelection": "premium_free",
+      "changeFee": 60,
+      "refundFee": 160,
+      "meal": true,
+      "perks": [
+        "Extra legroom",
+        "Priority check-in",
+        "Enhanced meal"
+      ]
+    },
+    {
+      "mult": 1.5,
+      "cabinBag": "2 × 10 kg",
+      "checkedBag": {
+        "pieces": 2,
+        "kg": 32
+      },
+      "seatSelection": "premium_free",
+      "changeFee": 0,
+      "refundFee": 0,
+      "meal": true,
+      "perks": [
+        "Extra legroom",
+        "Lounge access",
+        "Fully flexible"
+      ]
+    }
+  ],
+  "business": [
+    {
+      "mult": 1,
+      "cabinBag": "2 × 7 kg",
+      "checkedBag": {
+        "pieces": 2,
+        "kg": 32
+      },
+      "seatSelection": "standard_free",
+      "changeFee": 150,
+      "refundFee": null,
+      "meal": true,
+      "perks": [
+        "Lie-flat seat",
+        "Lounge access",
+        "Chauffeur-drive eligible"
+      ]
+    },
+    {
+      "mult": 1.16,
+      "cabinBag": "2 × 7 kg",
+      "checkedBag": {
+        "pieces": 2,
+        "kg": 32
+      },
+      "seatSelection": "premium_free",
+      "changeFee": 75,
+      "refundFee": 200,
+      "meal": true,
+      "perks": [
+        "Lie-flat seat",
+        "Lounge access",
+        "Priority baggage"
+      ]
+    },
+    {
+      "mult": 1.4,
+      "cabinBag": "2 × 10 kg",
+      "checkedBag": {
+        "pieces": 3,
+        "kg": 32
+      },
+      "seatSelection": "premium_free",
+      "changeFee": 0,
+      "refundFee": 0,
+      "meal": true,
+      "perks": [
+        "Lie-flat seat",
+        "Lounge access",
+        "Fully flexible",
+        "Bonus miles"
+      ]
+    }
+  ],
+  "first": [
+    {
+      "mult": 1,
+      "cabinBag": "2 × 8 kg",
+      "checkedBag": {
+        "pieces": 3,
+        "kg": 32
+      },
+      "seatSelection": "premium_free",
+      "changeFee": 200,
+      "refundFee": null,
+      "meal": true,
+      "perks": [
+        "Private suite",
+        "First lounge",
+        "Chauffeur-drive"
+      ]
+    },
+    {
+      "mult": 1.15,
+      "cabinBag": "2 × 8 kg",
+      "checkedBag": {
+        "pieces": 3,
+        "kg": 32
+      },
+      "seatSelection": "premium_free",
+      "changeFee": 100,
+      "refundFee": 250,
+      "meal": true,
+      "perks": [
+        "Private suite",
+        "First lounge",
+        "Chauffeur-drive",
+        "Onboard shower where available"
+      ]
+    },
+    {
+      "mult": 1.35,
+      "cabinBag": "2 × 8 kg",
+      "checkedBag": {
+        "pieces": 4,
+        "kg": 32
+      },
+      "seatSelection": "premium_free",
+      "changeFee": 0,
+      "refundFee": 0,
+      "meal": true,
+      "perks": [
+        "Private suite",
+        "First lounge",
+        "Fully flexible",
+        "Bonus miles"
+      ]
+    }
+  ]
+}

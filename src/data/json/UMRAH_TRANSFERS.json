@@ -1,0 +1,54 @@
+[
+  {
+    "id": "shared-coach",
+    "label": "Shared coach transfers",
+    "description": "Air-conditioned coaches for all airport, Makkah and Madinah transfers, with a representative at arrivals.",
+    "vehicle": "Air-conditioned coach (shared)",
+    "priceDelta": 0,
+    "includes": [
+      "Jeddah airport → Makkah",
+      "Makkah → Madinah",
+      "Madinah → airport",
+      "Meet & greet at arrivals"
+    ]
+  },
+  {
+    "id": "haramain-train",
+    "label": "Haramain high-speed train",
+    "description": "Makkah to Madinah by the Haramain train (about 2h 15m), with coach transfers to and from stations.",
+    "vehicle": "Haramain train + coach",
+    "priceDelta": 24,
+    "includes": [
+      "Jeddah airport → Makkah (coach)",
+      "Makkah → Madinah by Haramain train",
+      "Madinah → airport (coach)",
+      "Station porter assistance"
+    ]
+  },
+  {
+    "id": "private-car",
+    "label": "Private car (up to 4 people)",
+    "description": "A private saloon car and driver for the entire journey, ideal for small families and elderly travellers.",
+    "vehicle": "Private saloon / people carrier",
+    "priceDelta": 58,
+    "includes": [
+      "Door-to-door private transfers",
+      "Driver waits at arrivals with name board",
+      "Free wait time up to 2 hours",
+      "Child seats on request"
+    ]
+  },
+  {
+    "id": "private-suv",
+    "label": "Private GMC / SUV",
+    "description": "A premium SUV with leather seats and a driver for you and your family — the most comfortable way to travel between the holy cities.",
+    "vehicle": "Private GMC Yukon / similar (up to 6)",
+    "priceDelta": 96,
+    "includes": [
+      "Door-to-door private transfers",
+      "Refreshments onboard",
+      "Driver waits at arrivals",
+      "Ziyarat drive-by stops on request"
+    ]
+  }
+]

@@ -1,0 +1,50 @@
+[
+  {
+    "id": "none",
+    "label": "No assistance needed",
+    "code": "",
+    "description": ""
+  },
+  {
+    "id": "wheelchair_ramp",
+    "label": "Wheelchair — can climb stairs",
+    "code": "WCHR",
+    "description": "Help to and from the gate and aircraft door; you can manage steps"
+  },
+  {
+    "id": "wheelchair_steps",
+    "label": "Wheelchair — cannot climb stairs",
+    "code": "WCHS",
+    "description": "Assistance up and down stairs; you can walk to your seat"
+  },
+  {
+    "id": "wheelchair_cabin",
+    "label": "Wheelchair — fully immobile",
+    "code": "WCHC",
+    "description": "Assistance all the way to and from your seat"
+  },
+  {
+    "id": "mobility",
+    "label": "Reduced mobility support",
+    "code": "MAAS",
+    "description": "A guide or buggy to help you through the airport"
+  },
+  {
+    "id": "visual",
+    "label": "Visual impairment",
+    "code": "BLND",
+    "description": "Meet-and-assist through the airport and onboard briefing"
+  },
+  {
+    "id": "hearing",
+    "label": "Hearing impairment",
+    "code": "DEAF",
+    "description": "Visual boarding and safety information support"
+  },
+  {
+    "id": "other",
+    "label": "Other request",
+    "code": "OTHS",
+    "description": "Tell us what you need"
+  }
+]

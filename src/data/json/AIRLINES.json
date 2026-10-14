@@ -1,0 +1,517 @@
+[
+  {
+    "code": "EK",
+    "name": "Emirates",
+    "numeric": "176",
+    "color": "#C8102E",
+    "hubs": [
+      "DXB"
+    ],
+    "priceFactor": 1,
+    "speed": 880,
+    "style": "legacy",
+    "fareNames": [
+      "Economy Saver",
+      "Economy Flex",
+      "Economy Flex Plus"
+    ],
+    "aircraftLong": [
+      "Airbus A380-800",
+      "Boeing 777-300ER"
+    ],
+    "aircraftShort": [
+      "Boeing 777-300ER",
+      "Airbus A380-800"
+    ],
+    "terminalPref": {
+      "LHR": "3",
+      "DXB": "3",
+      "LGW": "S",
+      "MAN": "2"
+    },
+    "slots": [
+      "07:40",
+      "09:15",
+      "14:20",
+      "21:35",
+      "02:45"
+    ],
+    "flightNo": [
+      1,
+      79
+    ],
+    "weight": 1
+  },
+  {
+    "code": "BA",
+    "name": "British Airways",
+    "numeric": "125",
+    "color": "#2E5AAC",
+    "hubs": [
+      "LHR"
+    ],
+    "priceFactor": 1.09,
+    "speed": 870,
+    "style": "light",
+    "fareNames": [
+      "Basic",
+      "Standard",
+      "Flex"
+    ],
+    "aircraftLong": [
+      "Boeing 787-9",
+      "Airbus A350-1000",
+      "Boeing 777-200ER"
+    ],
+    "aircraftShort": [
+      "Airbus A320neo",
+      "Airbus A321",
+      "Embraer 190"
+    ],
+    "terminalPref": {
+      "LHR": "5",
+      "DXB": "1",
+      "JED": "N",
+      "IST": "1"
+    },
+    "slots": [
+      "08:50",
+      "11:05",
+      "15:30",
+      "19:45",
+      "22:10"
+    ],
+    "flightNo": [
+      100,
+      199
+    ],
+    "weight": 0.95
+  },
+  {
+    "code": "QR",
+    "name": "Qatar Airways",
+    "numeric": "157",
+    "color": "#700B3D",
+    "hubs": [
+      "DOH"
+    ],
+    "priceFactor": 0.97,
+    "speed": 880,
+    "style": "legacy",
+    "fareNames": [
+      "Economy Classic",
+      "Economy Convenience",
+      "Economy Comfort"
+    ],
+    "aircraftLong": [
+      "Airbus A350-900",
+      "Boeing 787-8",
+      "Boeing 777-300ER"
+    ],
+    "aircraftShort": [
+      "Airbus A320",
+      "Boeing 737-800",
+      "Airbus A321"
+    ],
+    "terminalPref": {
+      "LHR": "4",
+      "DOH": "1",
+      "MAN": "2",
+      "BHX": "1"
+    },
+    "slots": [
+      "07:20",
+      "10:40",
+      "13:55",
+      "17:30",
+      "21:05"
+    ],
+    "flightNo": [
+      1,
+      99
+    ],
+    "weight": 0.98
+  },
+  {
+    "code": "EY",
+    "name": "Etihad Airways",
+    "numeric": "607",
+    "color": "#A2843E",
+    "hubs": [
+      "AUH"
+    ],
+    "priceFactor": 0.95,
+    "speed": 875,
+    "style": "legacy",
+    "fareNames": [
+      "Economy Deal",
+      "Economy Classic",
+      "Economy Plus"
+    ],
+    "aircraftLong": [
+      "Boeing 787-9",
+      "Airbus A350-1000",
+      "Airbus A380-800"
+    ],
+    "aircraftShort": [
+      "Airbus A321",
+      "Airbus A320"
+    ],
+    "terminalPref": {
+      "LHR": "4",
+      "AUH": "A",
+      "MAN": "2"
+    },
+    "slots": [
+      "09:20",
+      "12:45",
+      "17:50",
+      "22:25"
+    ],
+    "flightNo": [
+      11,
+      79
+    ],
+    "weight": 0.9
+  },
+  {
+    "code": "TK",
+    "name": "Turkish Airlines",
+    "numeric": "235",
+    "color": "#DA2A24",
+    "hubs": [
+      "IST"
+    ],
+    "priceFactor": 0.86,
+    "speed": 860,
+    "style": "legacy",
+    "fareNames": [
+      "EcoFly",
+      "ExtraFly",
+      "PrimeFly"
+    ],
+    "aircraftLong": [
+      "Airbus A330-300",
+      "Boeing 787-9",
+      "Airbus A350-900"
+    ],
+    "aircraftShort": [
+      "Airbus A321neo",
+      "Boeing 737-800",
+      "Airbus A320"
+    ],
+    "terminalPref": {
+      "LHR": "2",
+      "IST": "1",
+      "MAN": "2",
+      "BHX": "1"
+    },
+    "slots": [
+      "06:45",
+      "09:55",
+      "13:20",
+      "16:40",
+      "20:15",
+      "23:30"
+    ],
+    "flightNo": [
+      1,
+      89
+    ],
+    "weight": 0.92
+  },
+  {
+    "code": "SV",
+    "name": "Saudia",
+    "numeric": "065",
+    "color": "#0B6B3A",
+    "hubs": [
+      "JED",
+      "RUH",
+      "MED"
+    ],
+    "priceFactor": 0.84,
+    "speed": 870,
+    "style": "legacy",
+    "fareNames": [
+      "Economy Guest",
+      "Economy Classic",
+      "Economy Flex"
+    ],
+    "aircraftLong": [
+      "Boeing 777-300ER",
+      "Airbus A330-300",
+      "Boeing 787-9"
+    ],
+    "aircraftShort": [
+      "Airbus A320",
+      "Airbus A321",
+      "Boeing 787-9"
+    ],
+    "terminalPref": {
+      "LHR": "3",
+      "JED": "1",
+      "MED": "1",
+      "RUH": "5",
+      "MAN": "2"
+    },
+    "slots": [
+      "08:10",
+      "11:30",
+      "14:45",
+      "18:20",
+      "23:55"
+    ],
+    "flightNo": [
+      100,
+      179
+    ],
+    "weight": 0.9
+  },
+  {
+    "code": "VS",
+    "name": "Virgin Atlantic",
+    "numeric": "932",
+    "color": "#B3123C",
+    "hubs": [
+      "LHR"
+    ],
+    "priceFactor": 1.05,
+    "speed": 880,
+    "style": "light",
+    "fareNames": [
+      "Economy Light",
+      "Economy Classic",
+      "Economy Delight"
+    ],
+    "aircraftLong": [
+      "Airbus A350-1000",
+      "Boeing 787-9",
+      "Airbus A330-300"
+    ],
+    "aircraftShort": [
+      "Airbus A330-300"
+    ],
+    "terminalPref": {
+      "LHR": "3",
+      "JFK": "4",
+      "LAX": "2"
+    },
+    "slots": [
+      "10:15",
+      "13:40",
+      "17:05"
+    ],
+    "flightNo": [
+      1,
+      29
+    ],
+    "weight": 0.85
+  },
+  {
+    "code": "FZ",
+    "name": "flydubai",
+    "numeric": "141",
+    "color": "#E14E1B",
+    "hubs": [
+      "DXB"
+    ],
+    "priceFactor": 0.66,
+    "speed": 830,
+    "style": "lowcost",
+    "fareNames": [
+      "Value",
+      "Flex",
+      "Business Lite"
+    ],
+    "aircraftLong": [
+      "Boeing 737 MAX 8"
+    ],
+    "aircraftShort": [
+      "Boeing 737 MAX 8",
+      "Boeing 737-800"
+    ],
+    "terminalPref": {
+      "DXB": "2",
+      "LGW": "N",
+      "DOH": "1"
+    },
+    "slots": [
+      "06:30",
+      "12:10",
+      "18:40",
+      "23:15"
+    ],
+    "flightNo": [
+      1,
+      99
+    ],
+    "weight": 0.7
+  },
+  {
+    "code": "GF",
+    "name": "Gulf Air",
+    "numeric": "072",
+    "color": "#9C6B2E",
+    "hubs": [
+      "BAH"
+    ],
+    "priceFactor": 0.88,
+    "speed": 860,
+    "style": "legacy",
+    "fareNames": [
+      "Economy Lite",
+      "Economy Smart",
+      "Economy Flex"
+    ],
+    "aircraftLong": [
+      "Boeing 787-9",
+      "Airbus A321neo"
+    ],
+    "aircraftShort": [
+      "Airbus A320neo",
+      "Airbus A321neo",
+      "Boeing 787-9"
+    ],
+    "terminalPref": {
+      "LHR": "3",
+      "BAH": "1"
+    },
+    "slots": [
+      "08:00",
+      "13:30",
+      "19:10"
+    ],
+    "flightNo": [
+      1,
+      19
+    ],
+    "weight": 0.8
+  },
+  {
+    "code": "LH",
+    "name": "Lufthansa",
+    "numeric": "220",
+    "color": "#0A1B5C",
+    "hubs": [
+      "FRA",
+      "MUC"
+    ],
+    "priceFactor": 1.12,
+    "speed": 850,
+    "style": "light",
+    "fareNames": [
+      "Economy Light",
+      "Economy Classic",
+      "Economy Flex"
+    ],
+    "aircraftLong": [
+      "Airbus A350-900",
+      "Boeing 747-8",
+      "Airbus A340-600"
+    ],
+    "aircraftShort": [
+      "Airbus A320neo",
+      "Airbus A321",
+      "Embraer 195"
+    ],
+    "terminalPref": {
+      "LHR": "2",
+      "FRA": "1",
+      "MUC": "2"
+    },
+    "slots": [
+      "07:05",
+      "10:20",
+      "14:10",
+      "18:35"
+    ],
+    "flightNo": [
+      900,
+      999
+    ],
+    "weight": 0.85
+  },
+  {
+    "code": "AF",
+    "name": "Air France",
+    "numeric": "057",
+    "color": "#0B2C6B",
+    "hubs": [
+      "CDG"
+    ],
+    "priceFactor": 1.06,
+    "speed": 850,
+    "style": "light",
+    "fareNames": [
+      "Light",
+      "Standard",
+      "Flex"
+    ],
+    "aircraftLong": [
+      "Airbus A350-900",
+      "Boeing 777-300ER"
+    ],
+    "aircraftShort": [
+      "Airbus A320",
+      "Airbus A220-300",
+      "Airbus A321"
+    ],
+    "terminalPref": {
+      "LHR": "4",
+      "CDG": "2E"
+    },
+    "slots": [
+      "06:55",
+      "11:15",
+      "15:00",
+      "19:25"
+    ],
+    "flightNo": [
+      1,
+      99
+    ],
+    "weight": 0.82
+  },
+  {
+    "code": "KL",
+    "name": "KLM Royal Dutch Airlines",
+    "numeric": "074",
+    "color": "#00A1DE",
+    "hubs": [
+      "AMS"
+    ],
+    "priceFactor": 1.03,
+    "speed": 850,
+    "style": "light",
+    "fareNames": [
+      "Light",
+      "Standard",
+      "Flex"
+    ],
+    "aircraftLong": [
+      "Boeing 787-10",
+      "Boeing 777-200ER"
+    ],
+    "aircraftShort": [
+      "Embraer 190",
+      "Boeing 737-800",
+      "Airbus A321"
+    ],
+    "terminalPref": {
+      "LHR": "4",
+      "AMS": "1"
+    },
+    "slots": [
+      "07:30",
+      "12:00",
+      "16:20",
+      "20:45"
+    ],
+    "flightNo": [
+      1000,
+      1099
+    ],
+    "weight": 0.8
+  }
+]

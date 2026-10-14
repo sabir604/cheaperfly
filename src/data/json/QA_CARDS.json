@@ -1,0 +1,14 @@
+[
+  {
+    "number": "4242 4242 4242 4242",
+    "label": "Succeeds"
+  },
+  {
+    "number": "4000 0000 0000 0002",
+    "label": "Card declined"
+  },
+  {
+    "number": "4000 0000 0000 9995",
+    "label": "Insufficient funds"
+  }
+]

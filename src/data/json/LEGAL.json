@@ -1,0 +1,191 @@
+[
+  {
+    "slug": "terms",
+    "title": "Terms & conditions",
+    "updated": "1 September 2026",
+    "intro": "These terms govern your use of Cheaperfly to search for and book flights, hotels and Umrah packages. This is a prototype: the content below is representative sample text, not a legal agreement.",
+    "sections": [
+      {
+        "heading": "1. Who we are",
+        "body": [
+          {
+            "type": "p",
+            "text": "Cheaperfly acts as an intermediary between you and travel suppliers such as airlines, hotels and Umrah service providers. The supplier is responsible for delivering the travel service you book."
+          }
+        ]
+      },
+      {
+        "heading": "2. Bookings and prices",
+        "body": [
+          {
+            "type": "p",
+            "text": "Prices shown include taxes and carrier charges unless stated otherwise. Optional extras such as seats, baggage and our service fee are itemised before you pay. Prices can change until your booking is confirmed."
+          },
+          {
+            "type": "p",
+            "text": "You must ensure that passenger names match travel documents exactly. Errors may lead to fees or refusal of travel."
+          }
+        ]
+      },
+      {
+        "heading": "3. Payment",
+        "body": [
+          {
+            "type": "p",
+            "text": "Payment is taken when you complete checkout, unless a flexible hotel rate lets you pay at the property. Your card issuer may apply currency conversion fees."
+          }
+        ]
+      },
+      {
+        "heading": "4. Changes and cancellations",
+        "body": [
+          {
+            "type": "p",
+            "text": "Changes and cancellations are subject to the fare rules or supplier conditions shown before you book. Our refund policy explains how estimates are calculated. Cheaperfly's service fee is non-refundable."
+          }
+        ]
+      },
+      {
+        "heading": "5. Travel documents and health",
+        "body": [
+          {
+            "type": "p",
+            "text": "You are responsible for valid passports, visas and health documents. For Umrah, we process visas but the Saudi authorities make the final decision."
+          }
+        ]
+      },
+      {
+        "heading": "6. Liability",
+        "body": [
+          {
+            "type": "p",
+            "text": "We are not liable for supplier schedule changes or events outside our control, except where the law provides otherwise."
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "slug": "privacy",
+    "title": "Privacy policy",
+    "updated": "1 September 2026",
+    "intro": "This describes how a live Cheaperfly service would handle personal data. In this prototype data is stored only in your browser.",
+    "sections": [
+      {
+        "heading": "What we collect",
+        "body": [
+          {
+            "type": "p",
+            "text": "Contact details, traveller and passport information you enter, booking history, payment method type and last four digits, and usage data such as recent searches."
+          }
+        ]
+      },
+      {
+        "heading": "How we use it",
+        "body": [
+          {
+            "type": "p",
+            "text": "To make and manage your bookings, share required details with suppliers, prevent fraud, provide support and, with your consent, send offers."
+          }
+        ]
+      },
+      {
+        "heading": "Your choices",
+        "body": [
+          {
+            "type": "p",
+            "text": "You can edit or delete saved travellers and profile details in your account, change notification preferences at any time and request deletion of your account."
+          }
+        ]
+      },
+      {
+        "heading": "Storage in this prototype",
+        "body": [
+          {
+            "type": "p",
+            "text": "Demo data is kept in your browser's local storage and can be cleared from the Demo hub. No data is sent to a server."
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "slug": "cookies",
+    "title": "Cookie policy",
+    "updated": "1 September 2026",
+    "intro": "Cheaperfly uses only the browser storage needed to make the site work in this prototype.",
+    "sections": [
+      {
+        "heading": "Essential storage",
+        "body": [
+          {
+            "type": "p",
+            "text": "We store your display currency, signed-in demo session, in-progress bookings and recent searches in your browser's local storage so the experience works across pages."
+          }
+        ]
+      },
+      {
+        "heading": "Analytics and marketing",
+        "body": [
+          {
+            "type": "p",
+            "text": "This prototype does not load analytics or advertising cookies."
+          }
+        ]
+      },
+      {
+        "heading": "Managing storage",
+        "body": [
+          {
+            "type": "p",
+            "text": "You can clear stored data from your browser settings or from the Demo hub."
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "slug": "refund-policy",
+    "title": "Refund & cancellation policy",
+    "updated": "1 September 2026",
+    "intro": "How we estimate refunds and what affects them. Final amounts are confirmed by the airline or supplier.",
+    "sections": [
+      {
+        "heading": "Flights",
+        "body": [
+          {
+            "type": "p",
+            "text": "Refunds follow the fare rules of the fare you bought. Non-refundable fares return unused airport taxes and charges only. Refundable fares return the fare less the airline's fee. Our handling fee is deducted unless the fare is fully refundable."
+          }
+        ]
+      },
+      {
+        "heading": "Hotels",
+        "body": [
+          {
+            "type": "p",
+            "text": "Free-cancellation rates can be cancelled without charge until the date shown. Non-refundable rates and cancellations after the deadline are charged in full. Our service fee is non-refundable."
+          }
+        ]
+      },
+      {
+        "heading": "Umrah packages",
+        "body": [
+          {
+            "type": "p",
+            "text": "More than 60 days before departure: 90% of the package is refundable. 31–60 days: 60%. 15–30 days: 30%. Within 14 days: non-refundable. Visa fees already submitted cannot be recovered."
+          }
+        ]
+      },
+      {
+        "heading": "Timelines",
+        "body": [
+          {
+            "type": "p",
+            "text": "Approved refunds are returned to the original payment method within 5–10 working days."
+          }
+        ]
+      }
+    ]
+  }
+]

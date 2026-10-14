@@ -1,0 +1,42 @@
+[
+  {
+    "id": "sv-direct",
+    "label": "Saudia direct",
+    "airline": "Saudia",
+    "airlineCode": "SV",
+    "route": "Nonstop to Jeddah, return from Madinah",
+    "stops": 0,
+    "baggage": "2 × 23 kg checked + 7 kg cabin",
+    "priceDelta": 0
+  },
+  {
+    "id": "ba-direct",
+    "label": "British Airways direct",
+    "airline": "British Airways",
+    "airlineCode": "BA",
+    "route": "Nonstop to Jeddah, return from Madinah",
+    "stops": 0,
+    "baggage": "1 × 23 kg checked + 10 kg cabin",
+    "priceDelta": 96
+  },
+  {
+    "id": "tk-ist",
+    "label": "Turkish Airlines via Istanbul",
+    "airline": "Turkish Airlines",
+    "airlineCode": "TK",
+    "route": "1 stop in Istanbul both ways",
+    "stops": 1,
+    "baggage": "2 × 23 kg checked + 8 kg cabin",
+    "priceDelta": -68
+  },
+  {
+    "id": "qr-doh",
+    "label": "Qatar Airways via Doha",
+    "airline": "Qatar Airways",
+    "airlineCode": "QR",
+    "route": "1 stop in Doha both ways",
+    "stops": 1,
+    "baggage": "2 × 23 kg checked + 7 kg cabin",
+    "priceDelta": -34
+  }
+]

@@ -1,0 +1,37 @@
+[
+  {
+    "to": "DXB",
+    "city": "Dubai",
+    "country": "United Arab Emirates",
+    "image": "dubaiSkyline",
+    "tag": "Sun, skyline & shopping"
+  },
+  {
+    "to": "IST*",
+    "city": "Istanbul",
+    "country": "Türkiye",
+    "image": "istanbulGalata",
+    "tag": "Where two continents meet"
+  },
+  {
+    "to": "JED",
+    "city": "Jeddah",
+    "country": "Saudi Arabia",
+    "image": "jeddahCorniche",
+    "tag": "Gateway to the holy cities"
+  },
+  {
+    "to": "AUH",
+    "city": "Abu Dhabi",
+    "country": "United Arab Emirates",
+    "image": "abuDhabiMosque",
+    "tag": "Grand mosque & culture"
+  },
+  {
+    "to": "MED",
+    "city": "Madinah",
+    "country": "Saudi Arabia",
+    "image": "madinahNabawi",
+    "tag": "City of the Prophet ﷺ"
+  }
+]

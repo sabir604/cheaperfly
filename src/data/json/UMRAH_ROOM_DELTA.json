@@ -1,0 +1,22 @@
+{
+  "essential": {
+    "quad": 0,
+    "triple": 55,
+    "double": 130
+  },
+  "comfort": {
+    "quad": 0,
+    "triple": 78,
+    "double": 175
+  },
+  "premium": {
+    "quad": 0,
+    "triple": 110,
+    "double": 245
+  },
+  "luxury": {
+    "quad": 0,
+    "triple": 160,
+    "double": 360
+  }
+}

@@ -1,0 +1,45 @@
+[
+  {
+    "id": "ziyarat-makkah",
+    "label": "Makkah ziyarat tour",
+    "description": "Half-day guided visit to Jabal al-Noor (Hira), Jabal Thawr, Mina, Muzdalifah and Arafat.",
+    "price": 35
+  },
+  {
+    "id": "ziyarat-madinah",
+    "label": "Madinah ziyarat tour",
+    "description": "Half-day guided visit to Quba Mosque, Masjid al-Qiblatain, Mount Uhud and the Seven Mosques.",
+    "price": 30
+  },
+  {
+    "id": "ihram",
+    "label": "Ihram & essentials kit",
+    "description": "Two ihram sets or abaya, belt, prayer mat, tasbih and a pilgrim guide book, delivered before travel.",
+    "price": 25
+  },
+  {
+    "id": "assist",
+    "label": "Wheelchair & mobility assistance",
+    "description": "Dedicated attendant and wheelchair for Tawaf and Sa'i, with fast-lane access where available.",
+    "price": 60
+  },
+  {
+    "id": "esim",
+    "label": "Saudi eSIM (20 GB)",
+    "description": "Instant-activation eSIM with 20 GB data valid for 14 days. Keep your own number.",
+    "price": 14
+  },
+  {
+    "id": "insurance",
+    "label": "Umrah travel & medical insurance",
+    "description": "Medical, cancellation and baggage cover, including pre-existing conditions declared at booking.",
+    "price": 29
+  },
+  {
+    "id": "scholar",
+    "label": "Private scholar-led orientation",
+    "description": "A 90-minute private walkthrough of the rites of Umrah with a qualified guide, before or on your first day in Makkah.",
+    "price": 90,
+    "perGroup": true
+  }
+]

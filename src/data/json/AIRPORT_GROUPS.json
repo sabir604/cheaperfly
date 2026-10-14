@@ -1,0 +1,50 @@
+{
+  "LON": {
+    "code": "LON",
+    "city": "London",
+    "country": "United Kingdom",
+    "airports": [
+      "LHR",
+      "LGW",
+      "STN",
+      "LTN",
+      "LCY"
+    ]
+  },
+  "PAR": {
+    "code": "PAR",
+    "city": "Paris",
+    "country": "France",
+    "airports": [
+      "CDG",
+      "ORY"
+    ]
+  },
+  "NYC": {
+    "code": "NYC",
+    "city": "New York",
+    "country": "United States",
+    "airports": [
+      "JFK",
+      "EWR"
+    ]
+  },
+  "IST": {
+    "code": "IST",
+    "city": "Istanbul",
+    "country": "Türkiye",
+    "airports": [
+      "IST",
+      "SAW"
+    ]
+  },
+  "DXB": {
+    "code": "DXB",
+    "city": "Dubai",
+    "country": "United Arab Emirates",
+    "airports": [
+      "DXB",
+      "DWC"
+    ]
+  }
+}

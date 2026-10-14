@@ -1,0 +1,34 @@
+[
+  {
+    "from": "LON",
+    "to": "DXB"
+  },
+  {
+    "from": "MAN",
+    "to": "DXB"
+  },
+  {
+    "from": "LON",
+    "to": "IST*"
+  },
+  {
+    "from": "BHX",
+    "to": "JED"
+  },
+  {
+    "from": "LON",
+    "to": "DOH"
+  },
+  {
+    "from": "LON",
+    "to": "CAI"
+  },
+  {
+    "from": "MAN",
+    "to": "IST*"
+  },
+  {
+    "from": "LON",
+    "to": "BKK"
+  }
+]

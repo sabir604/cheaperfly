@@ -1,0 +1,137 @@
+[
+  {
+    "id": "ajyad-royal-suites",
+    "name": "Ajyad Royal Suites",
+    "city": "makkah",
+    "stars": 5,
+    "distanceM": 150,
+    "image": "/images/makkah-clocktower.jpg",
+    "amenities": [
+      "zamzam",
+      "prayer",
+      "halal"
+    ],
+    "perNightPerPerson": 64,
+    "rating": 9
+  },
+  {
+    "id": "marwa-gate-hotel",
+    "name": "Marwa Gate Hotel",
+    "city": "makkah",
+    "stars": 5,
+    "distanceM": 260,
+    "image": "/images/hotel-lounge.jpg",
+    "amenities": [
+      "zamzam",
+      "prayer",
+      "halal"
+    ],
+    "perNightPerPerson": 53,
+    "rating": 8.8
+  },
+  {
+    "id": "safa-heights",
+    "name": "Safa Heights Makkah",
+    "city": "makkah",
+    "stars": 4,
+    "distanceM": 450,
+    "image": "/images/hotel-exterior.jpg",
+    "amenities": [
+      "haram_shuttle",
+      "prayer",
+      "halal"
+    ],
+    "perNightPerPerson": 38,
+    "rating": 8.4
+  },
+  {
+    "id": "ibrahim-khalil-grand",
+    "name": "Ibrahim Khalil Grand",
+    "city": "makkah",
+    "stars": 4,
+    "distanceM": 900,
+    "image": "/images/room-white.jpg",
+    "amenities": [
+      "haram_shuttle",
+      "halal",
+      "family"
+    ],
+    "perNightPerPerson": 29,
+    "rating": 8.1
+  },
+  {
+    "id": "aziziyah-comfort",
+    "name": "Aziziyah Comfort Residence",
+    "city": "makkah",
+    "stars": 3,
+    "distanceM": 3200,
+    "image": "/images/room-twin.jpg",
+    "amenities": [
+      "haram_shuttle",
+      "kitchen",
+      "family"
+    ],
+    "perNightPerPerson": 17,
+    "rating": 7.6
+  },
+  {
+    "id": "nabawi-gate-royal",
+    "name": "Nabawi Gate Royal",
+    "city": "madinah",
+    "stars": 5,
+    "distanceM": 120,
+    "image": "/images/madinah-nabawi.jpg",
+    "amenities": [
+      "prayer",
+      "halal",
+      "zamzam"
+    ],
+    "perNightPerPerson": 56,
+    "rating": 9.1
+  },
+  {
+    "id": "quba-grand",
+    "name": "Quba Grand Hotel",
+    "city": "madinah",
+    "stars": 4,
+    "distanceM": 300,
+    "image": "/images/madinah-night.jpg",
+    "amenities": [
+      "prayer",
+      "halal",
+      "wifi"
+    ],
+    "perNightPerPerson": 37,
+    "rating": 8.5
+  },
+  {
+    "id": "al-salam-palace",
+    "name": "Al Salam Palace Madinah",
+    "city": "madinah",
+    "stars": 4,
+    "distanceM": 550,
+    "image": "/images/room-orange.jpg",
+    "amenities": [
+      "prayer",
+      "halal",
+      "family"
+    ],
+    "perNightPerPerson": 28,
+    "rating": 8.2
+  },
+  {
+    "id": "taibah-comfort-inn",
+    "name": "Taibah Comfort Inn",
+    "city": "madinah",
+    "stars": 3,
+    "distanceM": 900,
+    "image": "/images/room-grey.jpg",
+    "amenities": [
+      "haram_shuttle",
+      "prayer",
+      "halal"
+    ],
+    "perNightPerPerson": 17,
+    "rating": 7.7
+  }
+]

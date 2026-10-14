@@ -1,0 +1,27 @@
+[
+  {
+    "code": "GBP",
+    "name": "British Pound",
+    "symbol": "£"
+  },
+  {
+    "code": "USD",
+    "name": "US Dollar",
+    "symbol": "$"
+  },
+  {
+    "code": "EUR",
+    "name": "Euro",
+    "symbol": "€"
+  },
+  {
+    "code": "AED",
+    "name": "UAE Dirham",
+    "symbol": "AED"
+  },
+  {
+    "code": "SAR",
+    "name": "Saudi Riyal",
+    "symbol": "SAR"
+  }
+]
