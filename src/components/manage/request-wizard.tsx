@@ -79,7 +79,7 @@ function Submitted({ booking, request, kind, basePath }: { booking: Booking; req
  * Original behaviour kept: any `?type=` other than `refund` (including `change`) runs as a cancellation.
  */
 export function RequestWizard({ booking, kind, basePath }: { booking: Booking; kind: "cancellation" | "refund"; basePath: string }) {
-  const parties = requestParties(booking);
+  const parties = requestParties(booking).filter(p=>!booking.refundedPassengerIds?.includes(p.id));
   const [step, setStep] = useState(0);
   const [selected, setSelected] = useState(parties.map((p) => p.id));
   const [reason, setReason] = useState("");
@@ -107,10 +107,12 @@ export function RequestWizard({ booking, kind, basePath }: { booking: Booking; k
   async function submit() {
     if (!ack) return setErrors({ ack: "Please confirm you understand the conditions." });
     setSubmitting(true);
-    await new Promise((r) => setTimeout(r, 900));
-    const request = submitRefundRequest(booking, { kind, passengerIds: covered, reason, explanation: explanation.trim() });
+    try {
+    const request = await submitRefundRequest(booking, { kind, passengerIds: covered, reason, explanation: explanation.trim() });
     setSubmitting(false);
     setSubmitted(request);
+    } catch {setErrors({ack:"Could not submit this request. Refresh to check existing requests before retrying."});}
+    finally {setSubmitting(false);}
   }
 
   if (submitted) return <Submitted booking={booking} request={submitted} kind={kind} basePath={basePath} />;

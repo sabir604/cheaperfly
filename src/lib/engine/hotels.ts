@@ -1,7 +1,10 @@
+import { apiRequest } from "@/lib/api/client";
+import type { HotelAvailability, HotelSearch, HotelQuote } from "@cheaperfly/api-contracts/hotels";
+import type { Currency } from "@cheaperfly/api-contracts";
 import { HOTELS, getDestination, type Hotel, type HotelRoom, type RatePlan } from "@/data/hotels";
 import { addDaysISO, dayDiff, parseDate, todayISO } from "@/lib/engine/dates";
 import { createRng } from "@/lib/engine/rng";
-import { ServiceError, sleep, type ServiceOptions } from "@/lib/engine/service";
+import { type ServiceOptions } from "@/lib/engine/service";
 
 export type MealPlan = "room_only" | "breakfast" | "half_board" | "full_board";
 
@@ -49,10 +52,10 @@ export interface HotelSearchResult {
 }
 
 /** Does one room sleep an even split of the party across the requested rooms? */
-export function roomFits(room: Pick<HotelRoom, "sleeps">, occ: Pick<Occupancy, "rooms" | "adults" | "children">): boolean {
+export function roomFits(room: Pick<HotelRoom, "sleeps"> & {roomsLeft?:number}, occ: Pick<Occupancy, "rooms" | "adults" | "children">): boolean {
   const adults = Math.ceil(occ.adults / occ.rooms);
   const children = Math.ceil(occ.children / occ.rooms);
-  return room.sleeps.adults >= adults && room.sleeps.adults + room.sleeps.children >= adults + children;
+  return (room.roomsLeft === undefined || room.roomsLeft >= occ.rooms) && room.sleeps.adults >= adults && room.sleeps.adults + room.sleeps.children >= adults + children;
 }
 
 /** Seasonal multiplier for one night in a destination. Fridays and Saturdays add 8%. */
@@ -184,7 +187,7 @@ export interface HotelRow {
   rank: number;
 }
 
-export function applyHotelFilters(hotels: Hotel[], criteria: HotelCriteria, f: HotelFilters): HotelRow[] {
+export function applyHotelFilters(hotels: Hotel[], criteria: HotelCriteria, f: HotelFilters, availability?: Record<string, RoomQuote[]>): HotelRow[] {
   const rows: HotelRow[] = [];
   for (const h of hotels) {
     if (
@@ -195,7 +198,9 @@ export function applyHotelFilters(hotels: Hotel[], criteria: HotelCriteria, f: H
       (f.maxDistanceKm !== null && h.distanceKm > f.maxDistanceKm)
     )
       continue;
-    const quote = bestQuote(h, criteria, { meals: f.meals, freeCancellation: f.freeCancellation });
+    const quote = availability
+      ? (availability[h.id] ?? []).filter(q=>{const room=h.rooms.find(r=>r.id===q.roomId);return !!room&&roomFits(room,criteria.occupancy)&&(!f.meals.length||f.meals.includes(q.meal))&&(!f.freeCancellation||q.refundable);}).reduce<RoomQuote|null>((a,b)=>!a||b.perNight<a.perNight?b:a,null)
+      : bestQuote(h, criteria, { meals: f.meals, freeCancellation: f.freeCancellation });
     if (quote && (f.maxPrice === null || quote.perNight <= f.maxPrice)) rows.push({ hotel: h, quote, rank: 0 });
   }
   return rows;
@@ -216,15 +221,21 @@ export function isHotelFiltered(f: HotelFilters): boolean {
 
 export type HotelSort = "recommended" | "price" | "rating" | "distance";
 
-/** Mock hotel supplier with the original's latency and QA scenarios. */
+async function post<T>(path:string,body:unknown):Promise<T> {return (await apiRequest<T>("public","hotels/"+path,{method:"POST",body:JSON.stringify(body)})).data;}
 export const hotelService = {
-  async search(criteria: HotelCriteria, opts?: ServiceOptions): Promise<HotelSearchResult> {
-    await sleep(1700);
-    if (opts?.scenario === "error") throw new ServiceError("supplier_timeout", "Our hotel suppliers didn't respond in time.");
-    const result = generateHotelSearch(criteria);
-    return opts?.scenario === "empty" ? { ...result, items: [] } : result;
-  },
+ search:(criteria:HotelCriteria,opts?:ServiceOptions)=>post<HotelSearch>("search",{criteria,...(opts?.scenario&&opts.scenario!=="ok"?{scenario:opts.scenario}:{})}),
+ detail:async(id:string)=>(await apiRequest<Hotel>("public","hotels/"+id)).data,
+ availability:(hotelId:string,criteria:HotelCriteria)=>post<HotelAvailability>("availability",{hotelId,criteria}),
+ previews:(items:{hotelId:string;criteria:HotelCriteria}[])=>post<{hotel:Hotel;criteria:HotelCriteria;quote:RoomQuote}[]>("previews",{items}),
+ quote:(searchId:string,hotelId:string,roomId:string,ratePlanId:string,currency:Currency)=>post<HotelQuote>("quotes",{searchId,hotelId,roomId,ratePlanId,currency}),
 };
+const quotes=new Map<string,Promise<HotelQuote>>();
+export const hotelQuoteKey=(searchId:string,hotelId:string,roomId:string,ratePlanId:string,currency:Currency,identity:string)=>JSON.stringify([searchId,hotelId,roomId,ratePlanId,currency,identity]);
+export function loadHotelQuote(searchId:string,hotelId:string,roomId:string,ratePlanId:string,currency:Currency,identity:string):Promise<HotelQuote> {
+ const key=hotelQuoteKey(searchId,hotelId,roomId,ratePlanId,currency,identity);
+ const found=quotes.get(key);if(found)return found.then(q=>{if(Date.parse(q.expiresAt)<=Date.now()){quotes.delete(key);return loadHotelQuote(searchId,hotelId,roomId,ratePlanId,currency,identity);}return q;});
+ const pending=hotelService.quote(searchId,hotelId,roomId,ratePlanId,currency);quotes.set(key,pending);pending.catch(()=>quotes.delete(key));if(quotes.size>50)quotes.delete(quotes.keys().next().value!);return pending;
+}
 
 /** `rankedIds` is the recommended order from `generateHotelSearch`. */
 export function sortHotelRows(rows: HotelRow[], sort: HotelSort, rankedIds: string[]): HotelRow[] {

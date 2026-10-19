@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -10,10 +10,11 @@ import { Button, ButtonLink } from "@/components/ui/button";
 import { InlineNotice } from "@/components/ui/feedback";
 import { Field, Input, Select, Textarea } from "@/components/ui/form";
 import { toast } from "@/components/ui/toast";
+import {submitWebsiteInquiry} from "@/lib/engine/inquiries";
 import { createSupportCase } from "@/lib/engine/bookings/requests";
 import { userOwnsBooking } from "@/lib/engine/bookings/status";
 import { useFeatures, useSiteConfig } from "@/lib/site-config";
-import { useBookingsStore } from "@/lib/stores/bookings";
+import { useServerBookings } from "@/lib/engine/server-bookings";
 import { useSessionStore } from "@/lib/stores/session";
 import { emailField } from "@/lib/validation";
 import type { SupportCase } from "@/lib/types/booking";
@@ -30,9 +31,11 @@ const supportSchema = z.object({
 type SupportValues = z.infer<typeof supportSchema>;
 
 /** WhatsApp is simulated: it opens a local support case and says so. */
-export function openWhatsAppCase(suffix = " locally") {
-  const c = createSupportCase({ topic: "Something else", subject: "WhatsApp chat request", message: "I'd like to chat on WhatsApp.", channel: "whatsapp" });
-  toast.info(`WhatsApp is simulated in this prototype. Case ${c.id} created${suffix}.`);
+export async function openWhatsAppCase(suffix = "") {
+ try {
+  const c = await createSupportCase({ topic: "Something else", subject: "WhatsApp chat request", message: "I'd like to chat on WhatsApp.", channel: "whatsapp" });
+  toast.info(`WhatsApp is simulated in this prototype. Case ${c.id} saved${suffix}.`);
+ } catch {toast.error("Could not save the support case. Please try again.");}
 }
 
 /** WhatsApp / phone / email cards. Phone depends on the `telephony` feature flag. */
@@ -88,12 +91,13 @@ export function SupportContactOptions({ onWhatsApp, stacked }: { onWhatsApp: () 
   );
 }
 
-/** Message form. Signed-in users skip name/email and pick from their bookings. Creates a local SP- case. */
-export function SupportForm({ defaultBooking, compact }: { defaultBooking?: string; compact?: boolean }) {
+/** Message form. Signed-in users skip name/email and pick from their bookings. Creates a persisted server case. */
+export function SupportForm({ defaultBooking, compact, inquiry=false }: { defaultBooking?: string; compact?: boolean; inquiry?:boolean }) {
   const user = useSessionStore((s) => s.user);
   const profile = useSessionStore((s) => s.profile);
-  const bookings = useBookingsStore((s) => s.bookings).filter((b) => userOwnsBooking(b, user));
-  const [created, setCreated] = useState<SupportCase | null>(null);
+  const bookings = useServerBookings((s) => s.bookings).filter((b) => userOwnsBooking(b, user));
+  const [created, setCreated] = useState<Pick<SupportCase,"id"> | null>(null);
+  const retry=useRef<{body:string;key:string}|null>(null);
   const form = useForm<SupportValues>({
     resolver: zodResolver(supportSchema),
     defaultValues: { name: profile ? `${profile.firstName} ${profile.lastName}` : "", email: user?.email ?? "", booking: defaultBooking ?? "", topic: "", message: "" },
@@ -114,13 +118,12 @@ export function SupportForm({ defaultBooking, compact }: { defaultBooking?: stri
         <span className="mb-3 flex h-11 w-11 items-center justify-center rounded-full bg-emerald-500 text-white">
           <Check className="h-6 w-6" strokeWidth={3} aria-hidden />
         </span>
-        <h3 className="text-xl font-extrabold">Support case created</h3>
+        <h3 className="text-xl font-extrabold">{inquiry?"Inquiry received":"Support case created"}</h3>
         <p className="mt-1 text-sm text-slate-700">
-          Your case reference is <b className="font-mono text-navy-900">{created.id}</b>. It’s saved to this browser as a local case — in this prototype your message
-          isn’t sent to a real agent.
+          Your reference is <b className="font-mono text-navy-900">{created.id}</b>. It is saved securely for staff review. No external chat, email or automatic agent reply was sent.
         </p>
         <div className="mt-4 flex flex-wrap gap-2">
-          {user && <ButtonLink href="/account/support">View my cases</ButtonLink>}
+          {user && !inquiry && <ButtonLink href="/account/support">View my cases</ButtonLink>}
           <Button
             variant="outline"
             onClick={() => {
@@ -137,18 +140,27 @@ export function SupportForm({ defaultBooking, compact }: { defaultBooking?: stri
   return (
     <form
       noValidate
-      onSubmit={form.handleSubmit(async (v) => {
+      onSubmit={(event)=>{void form.handleSubmit(async (v) => {
         await new Promise((r) => setTimeout(r, 600));
-        const c = createSupportCase({ topic: v.topic, subject: `${v.topic}${v.booking ? ` — ${v.booking}` : ""}`, message: v.message, bookingRef: v.booking || undefined });
-        setCreated(c);
-        toast.success(`Case ${c.id} created`);
-      })}
+        try {
+        if(inquiry){
+          const body={name:v.name,email:v.email,topic:v.topic,message:v.message,...(v.booking?{bookingRef:v.booking}:{})};
+          const serialized=JSON.stringify(body);
+          if(retry.current?.body!==serialized)retry.current={body:serialized,key:crypto.randomUUID()};
+          const receipt=await submitWebsiteInquiry(body,retry.current!.key);
+          setCreated({id:receipt.reference});toast.success('Inquiry saved for staff review. No email was sent.');
+        }else{
+          const c = await createSupportCase({ topic: v.topic, subject: `${v.topic}${v.booking ? ` — ${v.booking}` : ""}`, message: v.message, bookingRef: v.booking || undefined });
+          setCreated(c);toast.success(`Case ${c.id} saved`);
+        }
+        } catch {toast.error("Could not save your message. Please try again.");}
+      })(event);}}
       className="grid gap-4 sm:grid-cols-2"
       aria-label="Message support"
     >
       {!compact && (
         <InlineNotice tone="info" className="sm:col-span-2">
-          This prototype stores your message locally as a support case. No message is delivered to an external agent.
+          Your message is saved securely for staff review. No external message or email is delivered in this simulation.
         </InlineNotice>
       )}
       {!user && (

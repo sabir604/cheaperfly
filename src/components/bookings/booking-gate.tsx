@@ -1,11 +1,11 @@
 "use client";
 
-import { useMemo, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { ButtonLink } from "@/components/ui/button";
 import { StateView } from "@/components/ui/feedback";
 import { Skeleton } from "@/components/ui/primitives";
-import { userOwnsBooking } from "@/lib/engine/bookings/status";
-import { useBookingsStore } from "@/lib/stores/bookings";
+import { serverBookings } from "@/lib/engine/server-bookings";
+import type { BookingDocument } from "@cheaperfly/api-contracts/bookings";
 import { useHydrated } from "@/lib/stores/hydration";
 import { useSessionStore } from "@/lib/stores/session";
 import type { Booking } from "@/lib/types/booking";
@@ -65,7 +65,7 @@ function Denied({ access, mode }: { access: Exclude<Access, "loading" | "ok">; m
     <StateView
       tone="warning"
       title="Booking not found"
-      description="We couldn't find a booking with that reference on this device. Check the reference or look it up with your last name."
+      description="We couldn't find a booking with that reference with those details. Check the reference or look it up with your last name."
       actions={
         <>
           <ButtonLink href="/manage-booking">Manage booking</ButtonLink>
@@ -82,21 +82,24 @@ function Denied({ access, mode }: { access: Exclude<Access, "loading" | "ok">; m
  * Renders a booking only for someone allowed to see it: the account that owns it, or (in guest
  * or document mode) a browser that made it or unlocked it via Manage Booking lookup.
  */
-export function BookingGate({ reference, mode, children }: { reference: string; mode: "guest" | "account" | "document"; children: (b: Booking) => ReactNode }) {
+export function BookingGate({ reference, mode, documentKind, children }: { documentKind?: BookingDocument['kind']; reference: string; mode: "guest" | "account" | "document"; children: (b: Booking) => ReactNode }) {
   const hydrated = useHydrated();
-  const bookings = useBookingsStore((s) => s.bookings);
-  const guestRefs = useBookingsStore((s) => s.guestRefs);
   const user = useSessionStore((s) => s.user);
-  const { booking, access } = useMemo((): { booking: Booking | null; access: Access } => {
-    if (!hydrated) return { booking: null, access: "loading" };
-    const b = bookings.find((x) => x.id.toLowerCase() === reference.toLowerCase()) ?? null;
-    if (!b) return { booking: null, access: mode !== "account" || user ? "notfound" : "signin" };
-    if (mode === "account") {
-      if (!user) return { booking: null, access: "signin" };
-      return userOwnsBooking(b, user) ? { booking: b, access: "ok" } : { booking: null, access: "forbidden" };
-    }
-    return guestRefs.includes(b.id) || userOwnsBooking(b, user) ? { booking: b, access: "ok" } : { booking: null, access: "forbidden" };
-  }, [hydrated, bookings, guestRefs, user, reference, mode]);
+  const [result,setResult]=useState<{key:string;booking:Booking|null;access:Access}>({key:'',booking:null,access:'loading'});
+  const key=`${reference}:${mode}:${documentKind ?? ''}:${user?.id ?? ''}`;
+  useEffect(()=>{
+    if(!hydrated)return;
+    let active=true;
+    const load=()=>{
+      setResult(previous=>previous.key===key&&previous.access==='ok'?previous:{key,booking:null,access:'loading'});
+      if(mode==='account'&&!user){setResult({key,booking:null,access:'signin'});return;}
+      serverBookings.read(reference,mode==='account',documentKind).then(booking=>{if(active)setResult({key,booking,access:'ok'});}).catch(()=>{if(active)setResult({key,booking:null,access:'forbidden'});});
+    };
+    load(); window.addEventListener('focus',load);window.addEventListener('booking-updated',load);
+    const timer=setInterval(load,60000);
+    return ()=>{active=false;clearInterval(timer);window.removeEventListener('focus',load);window.removeEventListener('booking-updated',load);};
+  },[hydrated,key,reference,mode,documentKind,user]);
+  const {booking,access}=result.key===key?result:{booking:null,access:'loading' as Access};
   if (access === "loading") return <GateSkeleton />;
   if (access === "ok" && booking) return <>{children(booking)}</>;
   return <Denied access={access === "ok" ? "notfound" : access} mode={mode} />;

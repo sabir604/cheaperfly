@@ -2,7 +2,7 @@ import dealRoutes from "@/data/json/DEAL_ROUTES.json";
 import homeDestinations from "@/data/json/HOME_DESTINATIONS.json";
 import { airportCityOf } from "@/lib/engine/airports";
 import { addDaysISO, todayISO } from "@/lib/engine/dates";
-import { generateOffers } from "@/lib/engine/flights/offers";
+import { apiRequest } from "@/lib/api/client";
 import type { FlightCriteria, Offer } from "@/lib/types/flights";
 
 export const DEAL_ROUTES = dealRoutes as { from: string; to: string }[];
@@ -46,9 +46,9 @@ export interface Deal {
 }
 
 /** Cheapest Saver fare on a route, used for "from £…" prices on the home page. */
-export function cheapestDeal(from: string, to: string, inDays = 16, nights = 7): Deal | null {
+export async function cheapestDeal(from: string, to: string, inDays = 16, nights = 7): Promise<Deal | null> {
   const criteria = dealCriteria(from, to, inDays, nights);
-  const offers = generateOffers(criteria);
+  const offers = (await apiRequest<Offer[]>("public","flights/previews",{method:"POST",body:JSON.stringify(criteria)})).data;
   if (!offers.length) return null;
   const best = offers.reduce((a, b) =>
     a.fares[0].farePerAdult + a.fares[0].taxPerAdult <= b.fares[0].farePerAdult + b.fares[0].taxPerAdult ? a : b,

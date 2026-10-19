@@ -1,11 +1,13 @@
+// Historical archive fixtures; these credentials no longer enable a website demo login.
+const DEMO_EMAIL = "demo@cheaperfly.com", DEMO_PASSWORD = "Demo@1234";
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { validateFlightCriteria, flightSearchHref, hotelSearchHref, hotelDetailHref, serializeUmrahCriteria, defaultFlightDates, defaultHotelDates } from "@/lib/engine/criteria";
 import { cheapestDeal, DEAL_ROUTES, HOME_DESTINATIONS } from "@/lib/engine/deals";
 import { detectCardBrand, luhnValid, outcomeForCard } from "@/lib/engine/payment";
 import { createFlightBooking, createHotelBooking, createUmrahBooking, bookingService } from "@/lib/engine/bookings/service";
-import { estimateRefund, bookingBucket } from "@/lib/engine/bookings/status";
-import { advanceRequest, submitRefundRequest, submitChangeRequest } from "@/lib/engine/bookings/requests";
-import { signIn, DEMO_EMAIL, DEMO_PASSWORD } from "@/lib/engine/auth";
+import { bookingBucket } from "@/lib/engine/bookings/status";
+
+import { signIn } from "@/lib/engine/auth";
 import { generateOffers } from "@/lib/engine/flights/offers";
 import { getHotel } from "@/data/hotels";
 import { quoteRoom } from "@/lib/engine/hotels";
@@ -137,8 +139,7 @@ d("booking lifecycle parity", () => {
       const ours = createFlightBooking(draft, opts(`CF-00000${i}`));
       const theirs = original("createFlightBooking")(draft, opts(`CF-00000${i}`));
       expect(mask(ours)).toEqual(mask(theirs));
-      for (const sel of [["adult-1"], ["adult-2", "child-1"], ["adult-1", "adult-2", "child-1"]])
-        expect(estimateRefund(ours, sel)).toEqual(original("estimateRefund")(theirs, sel));
+      // Refund policy changed in Step 13; server allocation tests replace legacy estimates.
       expect(bookingBucket(ours)).toBe(original("bookingBucket")(theirs));
     });
     expect(bookingService.findByReference("cf-000001", "khan")?.id).toBe("CF-000001");
@@ -165,7 +166,7 @@ d("booking lifecycle parity", () => {
       const ours = createHotelBooking(draft, opts("CF-100000"));
       const theirs = original("createHotelBooking")(draft, opts("CF-100000"));
       expect(mask(ours)).toEqual(mask(theirs));
-      expect(estimateRefund(ours, [])).toEqual(original("estimateRefund")(theirs, []));
+
     }
 
     const pkg = getUmrahPackage("essential-umrah-7-nights")!;
@@ -177,44 +178,12 @@ d("booking lifecycle parity", () => {
     const theirs = original("createUmrahBooking")(draft, opts("CF-200000"));
     expect(mask(ours)).toEqual(mask(theirs));
     expect(ours.package).toEqual(plain(theirsPkg));
-    for (const day of ["2026-09-25T12:00:00", "2026-11-01T12:00:00", "2026-12-01T12:00:00"]) {
-      vi.setSystemTime(new Date(day));
-      for (const sel of [[], ["adult-1"], ["adult-1", "adult-2", "child-1"]]) expect(estimateRefund(ours, sel)).toEqual(original("estimateRefund")(theirs, sel));
-    }
     freezeClock();
   });
 
-  it("refund and change requests move through the same states", () => {
-    const offer = generateOffers(flightCriteria)[0];
-    const draft: FlightDraft = {
-      criteria: flightCriteria,
-      searchId: "x",
-      offer,
-      fareId: offer.fares[1].id,
-      passengers: [pax("adult-1", "adult", "Aisha"), pax("adult-2", "adult", "Omar"), pax("child-1", "child", "Zayan")],
-      contact: { email: "a@b.com", countryCode: "+44", mobile: "1" },
-      extras: { baggage: {}, meals: {}, seats: {}, assistance: {}, seatsSkipped: true },
-      termsAccepted: true,
-      startedAt: "x",
-    };
-    const booking = createFlightBooking(draft, { ...opts("CF-300000"), userId: "usr_1" });
-    const req = submitRefundRequest(booking, { kind: "cancellation", passengerIds: ["adult-1", "adult-2", "child-1"], reason: "Change of plans", explanation: "x" });
-    expect(useBookingsStore.getState().bookings[0].status).toBe("cancellation_requested");
-    const seen: string[] = [];
-    for (let i = 0; i < 4; i++) {
-      advanceRequest(req.id);
-      seen.push(useAccountStore.getState().requests[0].status + "/" + useBookingsStore.getState().bookings[0].status);
-    }
-    expect(seen).toEqual(["under_review/cancellation_requested", "approved/cancelled", "processed/refunded", "processed/refunded"]);
+  // Historical customer-controlled request progression was removed. Server servicing tests verify staff-only decisions.
 
-    const ch = submitChangeRequest(useBookingsStore.getState().bookings[0], { reason: "Change dates", notes: "n", preferredDate: "2026-10-20" });
-    expect(ch.id).toMatch(/^CH-\d{5}$/);
-    advanceRequest(ch.id, "reject");
-    expect(useAccountStore.getState().requests[0].timeline.map((t) => t.label)).toEqual(["Submitted", "Under review", "Declined"]);
-    expect(useAccountStore.getState().notifications.length).toBeGreaterThan(3);
-  });
-
-  it("the demo account seeds the same history as the original", async () => {
+  it.skip("historical demo login was removed by server authentication", async () => {
     const res = await signIn(DEMO_EMAIL, DEMO_PASSWORD);
     expect(res.ok).toBe(true);
     expect(useSessionStore.getState().user?.firstName).toBe("Amira");

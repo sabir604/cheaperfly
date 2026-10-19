@@ -36,6 +36,9 @@ function SeatsPage({ draft, breakdown }: { draft: FlightDraft; breakdown: PriceB
   const infants = draft.passengers.filter((p) => p.type === "infant");
   const [segIndex, setSegIndex] = useState(0);
   const [activePax, setActivePax] = useState<string | null>(seated[0]?.id ?? null);
+  const [selectionError,setSelectionError]=useState<string|null>(null);
+  const [mapAttempt,setMapAttempt]=useState(0);
+  const [mapError,setMapError]=useState<string|null>(null);
   const [maps, setMaps] = useState<Record<string, SeatMap>>({});
   const [hovered, setHovered] = useState<Seat | null>(null);
   // Small phones start zoomed out. This step only mounts client-side, after hydration.
@@ -46,13 +49,13 @@ function SeatsPage({ draft, breakdown }: { draft: FlightDraft; breakdown: PriceB
   useEffect(() => {
     if (maps[segment.id]) return;
     let cancelled = false;
-    flightService.getSeatMap(segment, fare).then((m) => {
-      if (!cancelled) setMaps((all) => ({ ...all, [segment.id]: m }));
-    });
+    flightService.getSeatMap(segment, fare, draft.searchId, draft.offer.id).then((m) => {
+      if (!cancelled) {setMapError(null);setMaps((all) => ({ ...all, [segment.id]: m }));}
+    }).catch((error:Error)=>{if(!cancelled) setMapError(error.message);});
     return () => {
       cancelled = true;
     };
-  }, [segment, fare, maps]);
+  }, [segment, fare, maps, draft.searchId, draft.offer.id, mapAttempt]);
 
   const selections = draft.extras.seats[segment.id] ?? {};
   const owners = seated.map((p, i) => ({ paxId: p.id, initials: paxInitials(p, i) }));
@@ -78,6 +81,8 @@ function SeatsPage({ draft, breakdown }: { draft: FlightDraft; breakdown: PriceB
       setSeat(segment.id, activePax, null);
       return;
     }
+    if(map?.rows.find(r=>r.row===seat.row)?.exit&&(seated.find(p=>p.id===activePax)?.type==="child"||infants.length>0||(draft.extras.assistance[activePax]&&draft.extras.assistance[activePax].type!=="none"))){setSelectionError("Choose a seat outside the exit rows for a child, a party with an infant, or a passenger requesting assistance.");return;}
+    setSelectionError(null);
     setSeat(segment.id, activePax, { seat: seat.id, price: seat.price, kind: seat.kind });
     // Move on to the next passenger without a seat on this flight.
     const next = seated.find((p) => p.id !== activePax && !selections[p.id]);
@@ -87,6 +92,7 @@ function SeatsPage({ draft, breakdown }: { draft: FlightDraft; breakdown: PriceB
   const summary = <FlightTripSummary offer={draft.offer} pax={draft.criteria.pax} />;
   return (
     <div className="container-page py-8">
+      {(mapError||selectionError) && <InlineNotice tone="error">{mapError||selectionError}{mapError&&<Button variant="ghost" onClick={()=>setMapAttempt(n=>n+1)}>Try again</Button>}</InlineNotice>}
       <div className="mb-6">
         <h1 className="text-2xl font-extrabold sm:text-3xl">Choose your seats</h1>
         <p className="mt-1 text-slate-600">

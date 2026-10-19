@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { ArrowRight, ArrowUpRight, Clock, Plane, Search, Trash2 } from "lucide-react";
 import { AirlineMark } from "@/components/brand";
@@ -10,7 +10,7 @@ import { SectionHeading } from "@/components/ui/primitives";
 import { IMG } from "@/data/hotels";
 import { flightSearchHref } from "@/lib/engine/criteria";
 import { formatDayShort } from "@/lib/engine/dates";
-import { DEAL_ROUTES, HOME_DESTINATIONS, cheapestDeal, dealCriteria } from "@/lib/engine/deals";
+import { DEAL_ROUTES, HOME_DESTINATIONS, cheapestDeal, dealCriteria, type Deal } from "@/lib/engine/deals";
 import { fareAdultTotal } from "@/lib/engine/pricing";
 import { useSiteConfig } from "@/lib/site-config";
 import { useHydrated } from "@/lib/stores/hydration";
@@ -20,7 +20,9 @@ import { cn } from "@/lib/utils";
 /** "Fares that caught our eye": cheapest return fare on each deal route, 3 weeks out. */
 export function FlightDeals() {
   const { fmt, currency } = useCurrency();
-  const rows = useMemo(() => DEAL_ROUTES.map((r) => ({ r, deal: cheapestDeal(r.from, r.to, 21, 7) })).filter((x) => x.deal), []);
+  const [rows,setRows]=useState<{r:{from:string;to:string};deal:Deal|null}[]>([]);
+  const [error,setError]=useState(false);
+  useEffect(()=>{let cancelled=false;Promise.all(DEAL_ROUTES.map(async r=>({r,deal:await cheapestDeal(r.from,r.to,21,7)}))).then(rows=>{if(!cancelled)setRows(rows.filter(x=>x.deal));}).catch(()=>{if(!cancelled)setError(true);});return ()=>{cancelled=true;};},[]);
   return (
     <section aria-labelledby="deals-h" className="container-page pt-20">
       <div className="grid gap-10 lg:grid-cols-[minmax(0,320px)_1fr] lg:gap-14">
@@ -37,6 +39,7 @@ export function FlightDeals() {
           </Link>
         </div>
         <ul className="divide-y divide-slate-200 overflow-hidden rounded-xl border border-slate-200 bg-white">
+          {rows.length===0&&<li role="status">{error?"Flight deals are unavailable. Please search for your route.":"Finding flight deals…"}</li>}
           {rows.map(({ r, deal }) => {
             const d = deal!;
             return (
@@ -81,13 +84,16 @@ export function FlightDeals() {
 export function PopularDestinations() {
   const { fmt, currency } = useCurrency();
   const featured = useSiteConfig().homepage.featuredDestinations;
+  const [deals,setDeals]=useState<Record<string,Deal|null>>({});
+  const featuredKey=JSON.stringify(featured);
+  useEffect(()=>{let cancelled=false;Promise.all((JSON.parse(featuredKey) as string[]).filter(code=>HOME_DESTINATIONS.some(d=>d.to===code)).map(async code=>[code,await cheapestDeal("LON",code)] as const)).then(entries=>{if(!cancelled)setDeals(Object.fromEntries(entries));}).catch(()=>{});return ()=>{cancelled=true;};},[featuredKey]);
   const items = useMemo(
     () =>
       featured
         .map((code) => HOME_DESTINATIONS.find((d) => d.to === code))
         .filter((d) => !!d)
-        .map((d) => ({ ...d, deal: cheapestDeal("LON", d.to), href: flightSearchHref(dealCriteria("LON", d.to)) })),
-    [featured],
+        .map((d) => ({ ...d, deal: deals[d.to]??null, href: flightSearchHref(dealCriteria("LON", d.to)) })),
+    [featured,deals],
   );
   if (items.length === 0) return null;
   return (

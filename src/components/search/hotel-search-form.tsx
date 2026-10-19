@@ -10,6 +10,7 @@ import { defaultHotelDates, defaultOccupancy, hotelSearchHref } from "@/lib/engi
 import { formatDateMed, nightsBetween, todayISO } from "@/lib/engine/dates";
 import type { HotelCriteria, Occupancy } from "@/lib/engine/hotels";
 import { useUiStore } from "@/lib/stores/session";
+import { isCalendarDate, validHotelCriteria } from "@cheaperfly/api-contracts/hotels";
 import { cn, plural } from "@/lib/utils";
 import { DualDateField } from "./date-field";
 import { OccupancyPicker } from "./pickers";
@@ -181,7 +182,9 @@ export function HotelSearchForm({
     if (!checkIn) errs.dates = "Choose your check-in date";
     else if (checkIn < todayISO()) errs.dates = "Check-in can't be in the past";
     else if (!checkOut) errs.dates = "Choose your check-out date";
+    else if (!isCalendarDate(checkIn)||!isCalendarDate(checkOut)) errs.dates="Choose valid calendar dates";
     else if (checkOut <= checkIn) errs.dates = "Check-out must be after check-in";
+    else if (dest&&!validHotelCriteria({destination:dest.id,checkIn,checkOut,occupancy})) errs.dates="Choose a stay of up to 30 nights within the next year and valid guest counts and ages";
     setErrors(errs);
     if (errs.dest || errs.dates || !dest || !checkIn || !checkOut) return;
     const criteria: HotelCriteria = { destination: dest.id, checkIn, checkOut, occupancy };

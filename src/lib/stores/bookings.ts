@@ -103,6 +103,6 @@ export const useAccountStore = create<AccountState>()(
           cases: [...s.cases, ...data.cases],
         })),
     }),
-    { name: "cf.account", storage: createJSONStorage(() => localStorage), skipHydration: true },
+    { name: "cf.account", storage: createJSONStorage(() => localStorage), skipHydration: true, partialize: (s) => ({requests:s.requests,cases:s.cases}) },
   ),
 );

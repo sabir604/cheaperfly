@@ -10,10 +10,10 @@ import { TabList } from "@/components/ui/disclosure";
 import { StateView } from "@/components/ui/feedback";
 import { Input } from "@/components/ui/form";
 import { Badge } from "@/components/ui/primitives";
-import { bookingBucket, bookingImage, PRODUCT_LABEL, userOwnsBooking, type BookingBucket } from "@/lib/engine/bookings/status";
+import { bookingBucket, bookingImage, PRODUCT_LABEL, type BookingBucket } from "@/lib/engine/bookings/status";
 import { formatCurrency } from "@/lib/engine/currency";
 import { dayDiff, formatDateMed, todayISO } from "@/lib/engine/dates";
-import { useBookingsStore } from "@/lib/stores/bookings";
+import { useServerBookings } from "@/lib/engine/server-bookings";
 import { useSessionStore } from "@/lib/stores/session";
 import type { Booking } from "@/lib/types/booking";
 import { cn } from "@/lib/utils";
@@ -22,9 +22,9 @@ import { PageTitle } from "./account-shell";
 /** The signed-in user's bookings, split into upcoming (soonest first), past and cancelled (latest first). */
 export function useMyBookings() {
   const user = useSessionStore((s) => s.user);
-  const bookings = useBookingsStore((s) => s.bookings);
+  const bookings = useServerBookings((s) => s.bookings);
   return useMemo(() => {
-    const all = bookings.filter((b) => userOwnsBooking(b, user));
+    const all = bookings.filter((b) => !!user && b.userId === user.id);
     const of = (bucket: BookingBucket) => all.filter((b) => bookingBucket(b) === bucket);
     const upcoming = of("upcoming").sort((a, b) => a.startDate.localeCompare(b.startDate));
     const past = of("past").sort((a, b) => b.startDate.localeCompare(a.startDate));

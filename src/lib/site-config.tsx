@@ -1,13 +1,10 @@
 "use client";
 
-/**
- * Site content & feature flags. Defaults ship with the app (DEFAULT_SITE / DEFAULT_FEATURES);
- * the admin portal publishes overrides into localStorage `cf-config`, and every open tab
- * picks them up via the `storage` event.
- */
+/** Published website content comes from the shared backend; defaults remain the initial view. */
 import { createContext, useContext, useMemo, type ReactNode } from "react";
 import { create } from "zustand";
-import { createJSONStorage, persist } from "zustand/middleware";
+import { apiRequest } from "@/lib/api/client";
+import type { PublicConfiguration } from "@cheaperfly/api-contracts";
 import defaultSite from "@/data/json/DEFAULT_SITE.json";
 import defaultFeatures from "@/data/json/DEFAULT_FEATURES.json";
 
@@ -30,53 +27,36 @@ export function withDefaults(content?: Partial<SiteConfig> | null): SiteConfig {
 
 interface ConfigState {
   content: Partial<SiteConfig> | null;
-  meta: { version: number; publishedAt: string; publishedBy: string } | null;
+  meta: { version: number } | null;
   features: Partial<Features>;
   hydrated: boolean;
-  publish: (content: Partial<SiteConfig>, meta: ConfigState["meta"]) => void;
-  setFeature: (key: FeatureKey, on: boolean) => void;
-  setFeatures: (f: Partial<Features>) => void;
-  resetAll: () => void;
+  error: string | null;
 }
-
-export const useConfigStore = create<ConfigState>()(
-  persist(
-    (set) => ({
-      content: null,
-      meta: null,
-      features: {},
-      hydrated: false,
-      publish: (content, meta) => set({ content: clone(content), meta }),
-      setFeature: (key, on) => set((s) => ({ features: { ...s.features, [key]: on } })),
-      setFeatures: (features) => set({ features }),
-      resetAll: () => set({ content: null, meta: null, features: {} }),
-    }),
-    {
-      name: "cf-config",
-      storage: createJSONStorage(() => localStorage),
-      skipHydration: true,
-      partialize: (s) => ({ content: s.content, meta: s.meta, features: s.features }),
-    },
-  ),
-);
-
+export const useConfigStore = create<ConfigState>()(() => ({
+  content: null, meta: null, features: {}, hydrated: false, error: null,
+}));
+let refreshSequence = 0;
+export async function refreshConfiguration() {
+  const sequence = ++refreshSequence;
+  try {
+    const { data } = await apiRequest<PublicConfiguration>("public", "configuration");
+    if (sequence !== refreshSequence) return;
+    useConfigStore.setState({content: data.content as unknown as SiteConfig, features: data.features, meta: {version:data.version}, hydrated:true,error:null});
+  } catch(error) {
+    if (sequence === refreshSequence) useConfigStore.setState({hydrated:true,error:error instanceof Error ? error.message : "Configuration unavailable."});
+  }
+}
 let syncing = false;
-
-/** Loads published config and keeps it in sync with other tabs (e.g. the admin portal). */
+/** Polling and focus refresh work across ports, browsers and devices; localStorage is not a publisher. */
 export function startConfigSync() {
-  if (syncing) return;
+  if (syncing) return () => {};
   syncing = true;
-  const load = () => {
-    try {
-      Promise.resolve(useConfigStore.persist.rehydrate()).finally(() => useConfigStore.setState({ hydrated: true }));
-    } catch {
-      useConfigStore.setState({ hydrated: true });
-    }
-  };
-  load();
-  window.addEventListener("storage", (e) => {
-    if (e.key === "cf-config") load();
-  });
+  // Legacy cf-config data is ignored and left intact; it cannot publish to the backend.
+  const refresh = () => { void refreshConfiguration(); };
+  refresh();
+  const timer = window.setInterval(refresh, 15_000);
+  window.addEventListener("focus", refresh);
+  return () => { syncing=false; refreshSequence++; window.clearInterval(timer); window.removeEventListener("focus",refresh); };
 }
 
 /** Admin "preview" mode renders the site with draft config instead of the published one. */

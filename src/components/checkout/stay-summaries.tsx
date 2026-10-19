@@ -1,11 +1,8 @@
 import type { ReactNode } from "react";
 import { Stars } from "@/components/brand";
 import { Photo } from "@/components/photo";
-import { getUmrahHotel } from "@/data/umrah";
-import { getHotel } from "@/data/hotels";
 import { addDaysISO, formatDateMed, formatDayShort } from "@/lib/engine/dates";
 import type { MealPlan } from "@/lib/engine/hotels";
-import { getUmrahPackage } from "@/lib/engine/umrah";
 import type { HotelDraft, UmrahDraft } from "@/lib/types/booking";
 import { plural } from "@/lib/utils";
 
@@ -27,7 +24,7 @@ function Row({ label, children, right }: { label: string; children: ReactNode; r
 
 /** Hotel checkout summary header: photo, dates, guests, room and rate. */
 export function HotelStaySummary({ draft }: { draft: HotelDraft }) {
-  const hotel = getHotel(draft.hotelId);
+  const hotel = draft.hotel;
   if (!hotel) return null;
   const q = draft.quote;
   const c = draft.criteria;
@@ -66,7 +63,7 @@ export function HotelStaySummary({ draft }: { draft: HotelDraft }) {
 
 /** Umrah checkout summary header: package, dates, hotels, room and party. */
 export function UmrahTripSummary({ draft }: { draft: UmrahDraft }) {
-  const pkg = getUmrahPackage(draft.packageId);
+  const pkg = draft.serverQuote?.pkg;
   if (!pkg) return null;
   const c = draft.config;
   return (
@@ -82,10 +79,10 @@ export function UmrahTripSummary({ draft }: { draft: UmrahDraft }) {
         </Row>
         <Row label="Returns">{formatDayShort(addDaysISO(c.departureDate, pkg.nights))}</Row>
         <Row label="Makkah" right>
-          {getUmrahHotel(c.makkahHotelId)?.name}
+          {pkg.options?.hotels.find(h=>h.id===c.makkahHotelId)?.name}
         </Row>
         <Row label="Madinah" right>
-          {getUmrahHotel(c.madinahHotelId)?.name}
+          {pkg.options?.hotels.find(h=>h.id===c.madinahHotelId)?.name}
         </Row>
         <div className="flex justify-between gap-3">
           <dt className="text-slate-500">Room</dt>

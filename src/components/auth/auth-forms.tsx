@@ -18,7 +18,7 @@ import { cn } from "@/lib/utils";
 import { emailField, strongPassword } from "@/lib/validation";
 
 /** Only same-site paths are honoured as `?next=` targets; anything else lands on the account dashboard. */
-const safeNext = (next?: string) => (next && next.startsWith("/") && !next.startsWith("//") ? next : "/account");
+const safeNext = (next?: string) => (next && /^\/(?![\/\\])[^\\\r\n]*$/.test(next) ? next : "/account");
 
 const withNext = (path: string, next?: string, sep = "?") => (next ? `${path}${sep}next=${encodeURIComponent(next)}` : path);
 
@@ -114,10 +114,11 @@ export function SignInForm({ next }: { next?: string }) {
 
   async function onSubmit(values: z.infer<typeof signInSchema>) {
     setError(null);
-    const res = await signIn(values.email, values.password);
+    const res = await signIn(values.email, values.password, !!values.remember);
     if (res.ok) {
       toast.success(`Welcome back, ${res.user!.firstName}`);
       router.replace(safeNext(next));
+      router.refresh();
       return;
     }
     if (res.code === "unverified") router.push(withNext(`/verify?email=${encodeURIComponent(values.email)}`, next, "&"));
@@ -289,7 +290,7 @@ export function VerifyForm({ email, next }: { email?: string; next?: string }) {
   const code = digits.join("");
 
   async function verify(value = code) {
-    if (value.length < 6) return setError("Enter the 6-digit code we sent you.");
+    if (value.length < 6) return setError("Enter your 6-digit verification code.");
     setVerifying(true);
     setError(null);
     const res = await verifyOtp(value);
@@ -297,6 +298,7 @@ export function VerifyForm({ email, next }: { email?: string; next?: string }) {
     if (res.ok) {
       toast.success("Email verified — welcome to Cheaperfly");
       router.replace(safeNext(next));
+      router.refresh();
     } else setError(res.error);
   }
 
@@ -325,11 +327,12 @@ export function VerifyForm({ email, next }: { email?: string; next?: string }) {
         title="Check your email"
         subtitle={
           <>
-            We sent a 6-digit code to <b className="text-navy-900">{address || "your email"}</b>. Enter it below to verify your account.
+            Enter the 6-digit verification code for <b className="text-navy-900">{address || "your email"}</b> to verify your account.
           </>
         }
       />
-      {otp && (
+      {!otp?.challengeId && <InlineNotice tone="info">For a new verification code, <Link href={withNext("/sign-in", next)}>sign in again</Link>.</InlineNotice>}
+      {otp?.code && (
         <DemoInbox className="mb-6">
           <p className="mt-1 text-sm text-slate-700">
             No email is actually sent in this prototype. Your verification code is{" "}
@@ -394,10 +397,11 @@ export function VerifyForm({ email, next }: { email?: string; next?: string }) {
           type="button"
           disabled={cooldown > 0}
           onClick={async () => {
-            await requestOtp("signup", address);
+            const result = await requestOtp("signup", address);
+            if (!result.ok) return setError(result.error);
             setCooldown(30);
             setDigits(Array(6).fill(""));
-            toast.info("A new code is on its way");
+            toast.info("A new verification challenge is ready");
           }}
           className="font-bold text-brand-600 hover:underline disabled:text-slate-400 disabled:no-underline"
         >
@@ -410,7 +414,8 @@ export function VerifyForm({ email, next }: { email?: string; next?: string }) {
 
 export function ForgotPasswordForm() {
   const [sentTo, setSentTo] = useState<string | null>(null);
-  const [exists, setExists] = useState(false);
+  const [resetLink, setResetLink] = useState<string | undefined>();
+  const [error, setError] = useState<string | null>(null);
   const form = useForm<z.infer<typeof forgotSchema>>({ resolver: zodResolver(forgotSchema), defaultValues: { email: "" } });
   const { errors, isSubmitting } = form.formState;
 
@@ -424,18 +429,18 @@ export function ForgotPasswordForm() {
           title="Check your inbox"
           subtitle={
             <>
-              If an account exists for <b className="text-navy-900">{sentTo}</b>, we’ve sent a link to reset your password.
+              If an account exists for <b className="text-navy-900">{sentTo}</b>, a password reset challenge is ready.
             </>
           }
         />
         <DemoInbox>
           <p className="mt-1 text-sm text-slate-700">
             No email is sent in this prototype.{" "}
-            {exists ? "Use the button below to open the reset link." : "No account exists for that address, so no link would be sent."}
+            {"If a simulated link is available, use the button below."}
           </p>
-          {exists && (
+          {resetLink && (
             <Link
-              href={`/reset-password?email=${encodeURIComponent(sentTo)}`}
+              href={resetLink}
               className="mt-3 inline-flex h-10 items-center rounded-lg bg-brand-500 px-4 text-sm font-semibold text-white hover:bg-brand-600"
             >
               Open reset link
@@ -452,15 +457,19 @@ export function ForgotPasswordForm() {
 
   return (
     <div>
-      <AuthHeading title="Forgot your password?" subtitle="Enter your email and we'll send a link to reset it." />
+      <AuthHeading title="Forgot your password?" subtitle="Enter your email to request a password reset link." />
       <form
         onSubmit={form.handleSubmit(async (values) => {
-          setExists((await requestPasswordReset(values.email)).exists);
+          setError(null);
+          const result = await requestPasswordReset(values.email);
+          if (!result.ok) return setError(result.error);
+          setResetLink(result.link);
           setSentTo(values.email);
         })}
         noValidate
         className="space-y-5"
       >
+        {error && <InlineNotice tone="error">{error}</InlineNotice>}
         <Field label="Email address" htmlFor="fp-email" error={errors.email?.message} required>
           <Input id="fp-email" type="email" autoComplete="email" invalid={!!errors.email} {...form.register("email")} />
         </Field>
@@ -477,14 +486,14 @@ export function ForgotPasswordForm() {
   );
 }
 
-export function ResetPasswordForm({ email }: { email?: string }) {
+export function ResetPasswordForm({ email, challengeId, token }: { email?: string; challengeId?: string; token?: string }) {
   const router = useRouter();
   const [done, setDone] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const form = useForm<z.infer<typeof resetSchema>>({ resolver: zodResolver(resetSchema), defaultValues: { password: "", confirm: "" } });
   const { errors, isSubmitting } = form.formState;
 
-  if (!email)
+  if (!email || !challengeId || !token)
     return (
       <div>
         <AuthHeading title="This reset link isn't valid" subtitle="Request a new link to reset your password." />
@@ -520,8 +529,11 @@ export function ResetPasswordForm({ email }: { email?: string }) {
       <form
         onSubmit={form.handleSubmit(async (values) => {
           setError(null);
-          const res = await resetPassword(email, values.password);
-          if (res.ok) setDone(true);
+          const res = await resetPassword(challengeId, token, values.password);
+          if (res.ok) {
+            window.history.replaceState(null, "", "/reset-password");
+            setDone(true);
+          }
           else setError(res.error ?? "Something went wrong");
         })}
         noValidate

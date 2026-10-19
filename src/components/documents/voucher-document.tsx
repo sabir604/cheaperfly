@@ -140,7 +140,7 @@ function UmrahVoucher({ b }: { b: UmrahBooking }) {
           <dd className="font-bold text-navy-900">{b.transfer.label}</dd>
         </Item>
         <Item label="Visa">
-          <dd className="font-bold text-navy-900">{b.visaStatus.replace("_", " ")}</dd>
+          <dd className="font-bold text-navy-900">{b.providerMode === "simulated" ? "Simulated — no visa submitted" : b.visaStatus.replace("_", " ")}</dd>
         </Item>
       </dl>
       <h3 className="mb-2 mt-6 text-[11px] font-bold uppercase tracking-wider text-slate-400">Travellers</h3>
@@ -174,5 +174,5 @@ function Voucher({ b }: { b: Booking }) {
 }
 
 export function VoucherDocument({ reference }: { reference: string }) {
-  return <DocumentShell reference={reference}>{(b) => <Voucher b={b} />}</DocumentShell>;
+  return <DocumentShell reference={reference} documentKind="voucher">{(b) => <Voucher b={b} />}</DocumentShell>;
 }

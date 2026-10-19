@@ -29,7 +29,7 @@ export default function AuthLayout({ children }: { children: ReactNode }) {
           <Link href="/legal/privacy" className="hover:text-brand-600">
             Privacy
           </Link>{" "}
-          · Prototype — no real accounts are created.
+          · Simulated email delivery — no email is sent.
         </footer>
       </div>
       <aside className="relative hidden lg:block" aria-hidden>

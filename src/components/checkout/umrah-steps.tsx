@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { FormProvider, useForm } from "react-hook-form";
@@ -16,11 +16,11 @@ import { InlineNotice, StateView } from "@/components/ui/feedback";
 import { Field, Input, Select, Textarea } from "@/components/ui/form";
 import { Badge } from "@/components/ui/primitives";
 import { countryName } from "@/data/countries";
-import { ROOM_LABEL, UMRAH_EXTRAS, getUmrahFlight, getUmrahHotel, getUmrahTransfer } from "@/data/umrah";
+import { ROOM_LABEL } from "@/data/umrah";
 import { toCurrency } from "@/lib/engine/currency";
 import { addDaysISO, formatDateMed, formatDayLong, formatDayShort } from "@/lib/engine/dates";
-import { calcUmrahPricing, umrahAdultPackagePrice, type PriceBreakdown } from "@/lib/engine/pricing";
-import { getUmrahPackage, resolveUmrahPricingInput } from "@/lib/engine/umrah";
+import { type PriceBreakdown } from "@/lib/engine/pricing";
+import { loadUmrahQuote, umrahQuoteKey, umrahService } from "@/lib/engine/umrah";
 import { useAccountStore } from "@/lib/stores/bookings";
 import { useDraftsStore } from "@/lib/stores/drafts";
 import { useHydrated } from "@/lib/stores/hydration";
@@ -36,6 +36,8 @@ import { MobileSummaryBar, SummaryPanel } from "./summary";
 import { ContactFields, TravellerFields, type ProfilePick } from "./traveller-fields";
 
 interface UmrahCtx {
+  quote: import("@cheaperfly/api-contracts/umrah").UmrahQuote;
+  valid: boolean;
   draft: UmrahDraft;
   pkg: UmrahPackage;
   input: UmrahPricingInput;
@@ -48,14 +50,27 @@ function UmrahGuard({ children }: { children: (ctx: UmrahCtx) => ReactNode }) {
   const draft = useDraftsStore((s) => s.umrah);
   const user = useSessionStore((s) => s.user);
   const { currency } = useCurrency();
-  const ctx = useMemo((): UmrahCtx | null => {
-    if (!draft) return null;
-    const pkg = getUmrahPackage(draft.packageId);
-    if (!pkg) return null;
-    const input = resolveUmrahPricingInput(pkg, draft.config);
-    return { draft, pkg, input, breakdown: calcUmrahPricing(input, currency, !!user) };
-  }, [draft, currency, user]);
+  const identity=user?.id??"guest";
+  const key=draft?umrahQuoteKey(draft.packageId,draft.config,currency,identity):"";
+  const [result,setResult]=useState<{key:string;identity:string;quote:import("@cheaperfly/api-contracts/umrah").UmrahQuote}|null>(null);
+  const [failure,setFailure]=useState<{key:string;message:string}|null>(null);
+  const [attempt,setAttempt]=useState(0);
+  const [expired,setExpired]=useState<string|null>(null);
+  useEffect(()=>{
+    if(!hydrated||!draft)return;
+    let cancelled=false;
+    loadUmrahQuote(draft.packageId,draft.config,currency,identity).then(quote=>{if(!cancelled){setResult({key,identity,quote});useDraftsStore.getState().patchUmrah({serverQuote:quote});setFailure(null);}}).catch((error:Error)=>{if(!cancelled)setFailure({key,message:error.message});});
+    return ()=>{cancelled=true;};
+    // The key covers every package option, currency and current identity.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  },[hydrated,key,attempt]);
+  useEffect(()=>{if(!result)return;const timer=setTimeout(()=>setExpired(result.quote.id),Math.max(0,Date.parse(result.quote.expiresAt)-Date.now()));return ()=>clearTimeout(timer);},[result]);
+  const quote=result?.identity===identity&&result.quote.pkg.id===draft?.packageId&&result.quote.total.currency===currency?result.quote:null;
+  const error=failure?.key===key?failure.message:quote?.id===expired?"This quote has expired. Please refresh the package.":null;
+  const ctx:UmrahCtx|null=draft&&quote?{draft,pkg:quote.pkg,input:quote.input,breakdown:quote.breakdown,quote,valid:result?.key===key&&!error}:null;
   if (!hydrated) return <StepSkeleton />;
+  if(draft&&!ctx&&!error)return <StepSkeleton />;
+  if(error&&!ctx)return <div className="container-page py-16"><StateView tone="warning" title="We couldn’t quote this package" description={error} actions={<><Button onClick={()=>setAttempt(n=>n+1)}>Try again</Button><ButtonLink href="/umrah/packages">Browse packages</ButtonLink></>} /></div>;
   if (!ctx)
     return (
       <div className="container-page py-16">
@@ -71,7 +86,7 @@ function UmrahGuard({ children }: { children: (ctx: UmrahCtx) => ReactNode }) {
         />
       </div>
     );
-  return <>{children(ctx)}</>;
+  return <>{error&&<InlineNotice tone="error">{error}<Button variant="ghost" onClick={()=>setAttempt(n=>n+1)}>Try again</Button></InlineNotice>}{children(ctx)}</>;
 }
 
 function Layout({ title, subtitle, ctx, aside, children }: { title: string; subtitle: ReactNode; ctx: UmrahCtx; aside?: ReactNode; children: ReactNode }) {
@@ -136,10 +151,10 @@ function Customize({ ctx }: { ctx: UmrahCtx }) {
   const c = draft.config;
   // Supplements are per person in GBP; shown in the display currency.
   const delta = (gbp: number) => (gbp === 0 ? "Included" : `${gbp > 0 ? "+" : "−"}${fmt(Math.abs(toCurrency(gbp, currency)))} pp`);
-  const defMakkah = getUmrahHotel(pkg.makkahHotelId)!;
-  const defMadinah = getUmrahHotel(pkg.madinahHotelId)!;
-  const defTransfer = getUmrahTransfer(pkg.defaultTransferId)!;
-  const adultPrice = (patch: Partial<UmrahConfig>) => umrahAdultPackagePrice(resolveUmrahPricingInput(pkg, { ...c, ...patch }), currency);
+  const defMakkah = pkg.options!.hotels.find(x=>x.id===pkg.makkahHotelId)!;
+  const defMadinah = pkg.options!.hotels.find(x=>x.id===pkg.madinahHotelId)!;
+  const defTransfer = pkg.options!.transfers.find(x=>x.id===pkg.defaultTransferId)!;
+  const adultPrice = (patch: Partial<UmrahConfig>) => patch.departureDate?ctx.quote.departurePrices[patch.departureDate]:ctx.quote.adultPrice;
   const perAdult = adultPrice({});
 
   const aside = (
@@ -210,7 +225,7 @@ function Customize({ ctx }: { ctx: UmrahCtx }) {
           <Card key={g.key} id={`cz-${g.key}`} title={`${g.title} · ${g.nights} nights`} sub={`Distances are walking distance to ${g.target}.`}>
             <div role="radiogroup" aria-label={g.title} className="grid gap-3 sm:grid-cols-2">
               {g.options.map((id) => {
-                const h = getUmrahHotel(id)!;
+                const h = pkg.options!.hotels.find(x=>x.id===id)!;
                 return (
                   <Choice key={id} selected={c[g.key] === id} onClick={() => update({ [g.key]: id })} className="overflow-hidden !p-0">
                     <Photo src={h.image} alt="" ratio="16/8" sizes="320px" />
@@ -230,7 +245,7 @@ function Customize({ ctx }: { ctx: UmrahCtx }) {
         <Card id="cz-flight" title="Flights" sub="Economy return flights from your departure city.">
           <div role="radiogroup" aria-label="Flight" className="grid gap-2.5 sm:grid-cols-2">
             {pkg.flightOptionIds.map((id) => {
-              const f = getUmrahFlight(id)!;
+              const f = pkg.options!.flights.find(x=>x.id===id)!;
               return (
                 <Choice key={id} selected={c.flightId === id} onClick={() => update({ flightId: id })}>
                   <p className="pr-6 text-sm font-bold text-navy-900">{f.label}</p>
@@ -245,7 +260,7 @@ function Customize({ ctx }: { ctx: UmrahCtx }) {
         <Card id="cz-transfer" title="Transfers" sub="Between the airport, Makkah and Madinah.">
           <div role="radiogroup" aria-label="Transfers" className="grid gap-2.5 sm:grid-cols-2">
             {pkg.transferOptionIds.map((id) => {
-              const t = getUmrahTransfer(id)!;
+              const t = pkg.options!.transfers.find(x=>x.id===id)!;
               return (
                 <Choice key={id} selected={c.transferId === id} onClick={() => update({ transferId: id })}>
                   <p className="pr-6 text-sm font-bold text-navy-900">{t.label}</p>
@@ -258,7 +273,7 @@ function Customize({ ctx }: { ctx: UmrahCtx }) {
         </Card>
         <Card id="cz-extras" title="Optional extras" sub="Add anything you'd like — you can remove it later before you pay.">
           <ul className="grid gap-3 sm:grid-cols-2">
-            {UMRAH_EXTRAS.map((x) => {
+            {pkg.options!.extras.map((x) => {
               const on = c.extraIds.includes(x.id);
               return (
                 <li key={x.id}>
@@ -291,7 +306,7 @@ function Customize({ ctx }: { ctx: UmrahCtx }) {
           <Link href={`/umrah/packages/${pkg.slug}`} className="text-center text-sm font-semibold text-slate-600 hover:text-umrah-700">
             ← Back to package
           </Link>
-          <Button variant="umrah" size="xl" onClick={() => router.push("/umrah/book/travellers")} rightIcon={<ArrowRight className="h-4 w-4" />}>
+          <Button variant="umrah" size="xl" disabled={!ctx.valid} onClick={() => router.push("/umrah/book/travellers")} rightIcon={<ArrowRight className="h-4 w-4" />}>
             Continue to traveller details
           </Button>
         </div>
@@ -302,6 +317,7 @@ function Customize({ ctx }: { ctx: UmrahCtx }) {
 
 function Travellers({ ctx }: { ctx: UmrahCtx }) {
   const router = useRouter();
+  const {currency}=useCurrency();
   const patchUmrah = useDraftsStore((s) => s.patchUmrah);
   const user = useSessionStore((s) => s.user);
   const profile = useSessionStore((s) => s.profile);
@@ -345,7 +361,7 @@ function Travellers({ ctx }: { ctx: UmrahCtx }) {
       }
     : null;
 
-  const onSubmit = form.handleSubmit((v) => {
+  const onSubmit = form.handleSubmit(async (v) => {
     // "Travelling with" isn't part of the passenger schema, so it is read from the raw form values.
     const raw = form.getValues() as unknown as { travellers: { mahram?: string }[] };
     const travellers: UmrahTraveller[] = v.travellers.map((t, i) => ({
@@ -362,12 +378,16 @@ function Travellers({ ctx }: { ctx: UmrahCtx }) {
       passportExpiry: t.passportExpiry ?? "",
       mahram: raw.travellers[i]?.mahram ?? "",
     }));
-    patchUmrah({ travellers, contact: v.contact, notes: v.notes ?? "" });
-    router.push("/umrah/book/review");
+    try {
+      const quote=await loadUmrahQuote(draft.packageId,draft.config,currency,user?.id??"guest");
+      const documents=await umrahService.travellers(quote.id,travellers,v.contact,v.notes??"");
+      patchUmrah({travellers,contact:v.contact,notes:v.notes??"",serverQuote:quote,documents});router.push("/umrah/book/review");
+    }catch(error){form.setError("root",{message:error instanceof Error?error.message:"Could not validate traveller details."});}
+
   });
 
   return (
-    <Layout title="Traveller details" subtitle="Enter details exactly as shown on each passport. We use these for visa applications and airline tickets." ctx={ctx}>
+    <Layout title="Traveller details" subtitle="Enter details exactly as shown on each passport for this simulated booking. No visa application is submitted." ctx={ctx}>
       <FormProvider {...form}>
         <form noValidate onSubmit={onSubmit} className="min-w-0 space-y-5">
           {!user && (
@@ -401,7 +421,7 @@ function Travellers({ ctx }: { ctx: UmrahCtx }) {
               }
             />
           ))}
-          <ContactFields note="We'll send your confirmation, visa updates and pilgrim checklist here" />
+          <ContactFields note="Contact details for this simulated booking. No email or visa application is sent." />
           <section className="rounded-xl border border-slate-200 bg-white p-5 sm:p-6" aria-labelledby="un-h">
             <h2 id="un-h" className="mb-3 text-[16px] font-bold text-navy-900">
               Notes for our Umrah team <span className="text-xs font-normal text-slate-400">Optional</span>
@@ -410,6 +430,7 @@ function Travellers({ ctx }: { ctx: UmrahCtx }) {
               <Textarea id="um-notes" rows={3} maxLength={400} {...form.register("notes")} />
             </Field>
           </section>
+          {errors.root?.message&&<InlineNotice tone="error">{errors.root.message}</InlineNotice>}
           {form.formState.isSubmitted && Object.keys(errors).length > 0 && (
             <InlineNotice tone="error" title="Please check the highlighted fields">
               Some traveller details are missing or don’t look right.
@@ -419,7 +440,7 @@ function Travellers({ ctx }: { ctx: UmrahCtx }) {
             <Link href="/umrah/book/customize" className="text-center text-sm font-semibold text-slate-600 hover:text-umrah-700">
               ← Back to customise
             </Link>
-            <Button type="submit" variant="umrah" size="lg" rightIcon={<ArrowRight className="h-4 w-4" />}>
+            <Button type="submit" variant="umrah" size="lg" loading={form.formState.isSubmitting} disabled={!ctx.valid} rightIcon={<ArrowRight className="h-4 w-4" />}>
               Continue to review
             </Button>
           </div>
@@ -433,6 +454,10 @@ const maskPassport = (n: string) => n.replace(/.(?=.{3})/g, "•");
 
 function Review({ ctx }: { ctx: UmrahCtx }) {
   const router = useRouter();
+  const {currency}=useCurrency();
+  const user=useSessionStore(s=>s.user);
+  const [checking,setChecking]=useState(false);
+  const [quoteError,setQuoteError]=useState<string|null>(null);
   const patchUmrah = useDraftsStore((s) => s.patchUmrah);
   const setActive = useDraftsStore((s) => s.setActive);
   const [termsError, setTermsError] = useState(false);
@@ -440,20 +465,22 @@ function Review({ ctx }: { ctx: UmrahCtx }) {
   const c = draft.config;
   const incomplete = draft.travellers.some((t) => !t.firstName || !t.lastName) || !draft.contact.email;
 
-  const proceed = () => {
+  const proceed = async () => {
     if (incomplete) return router.push("/umrah/book/travellers");
     if (!draft.termsAccepted) {
       setTermsError(true);
       document.getElementById("terms")?.focus();
       return;
     }
-    setActive("umrah");
-    router.push("/checkout/payment");
+    setChecking(true);setQuoteError(null);
+    try {const quote=await loadUmrahQuote(draft.packageId,draft.config,currency,user?.id??"guest");const documents=await umrahService.travellers(quote.id,draft.travellers,draft.contact,draft.notes);patchUmrah({serverQuote:quote,documents});setActive("umrah");router.push("/checkout/payment");}catch(error){setQuoteError(error instanceof Error?error.message:"Could not refresh this package.");}finally{setChecking(false);}
+
   };
 
   return (
     <Layout title="Review your Umrah booking" subtitle="Use Edit on any section to make changes. Your other choices are kept." ctx={ctx}>
       <div className="min-w-0 space-y-5">
+        {quoteError&&<InlineNotice tone="error">{quoteError}</InlineNotice>}
         <ReviewSection id="ur-pkg" title="Package & dates" editHref="/umrah/book/customize">
           <p className="text-[17px] font-bold text-navy-900">{pkg.name}</p>
           <KeyValue
@@ -487,7 +514,7 @@ function Review({ ctx }: { ctx: UmrahCtx }) {
               { label: "Flights", value: `${input.flight.label} — ${input.flight.baggage}` },
               { label: "Transfers", value: input.transfer.label },
               { label: "Extras", value: input.extras.length ? input.extras.map((x) => x.label).join(", ") : "None" },
-              { label: "Visa", value: "Umrah visa processing included" },
+              { label: "Visa", value: "Included in package · not submitted (simulation)" },
             ]}
           />
         </ReviewSection>
@@ -541,7 +568,7 @@ function Review({ ctx }: { ctx: UmrahCtx }) {
           <Link href="/umrah/book/travellers" className="text-center text-sm font-semibold text-slate-600 hover:text-umrah-700">
             ← Back to travellers
           </Link>
-          <Button variant="umrah" size="xl" onClick={proceed} rightIcon={<ArrowRight className="h-4 w-4" />}>
+          <Button variant="umrah" size="xl" onClick={proceed} loading={checking} disabled={!ctx.valid} rightIcon={<ArrowRight className="h-4 w-4" />}>
             Continue to payment
           </Button>
         </div>

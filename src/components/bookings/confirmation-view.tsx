@@ -36,6 +36,7 @@ function firstName(b: Booking) {
 }
 
 export function ConfirmationView({ booking, signedIn }: { booking: Booking; signedIn: boolean }) {
+  const simulated=booking.providerMode==="simulated";
   const isFlight = booking.product === "flight";
   const docHref = isFlight ? `/documents/eticket/${booking.id}` : `/documents/voucher/${booking.id}`;
   const viewHref = signedIn ? `/account/bookings/${booking.id}` : `/manage-booking/${booking.id}`;
@@ -59,7 +60,7 @@ export function ConfirmationView({ booking, signedIn }: { booking: Booking; sign
               </Badge>
               <h1 className="text-3xl font-extrabold sm:text-4xl">Booking confirmed</h1>
               <p className="mt-1.5 text-[15px] text-slate-600">
-                Thank you, {firstName(booking)}. We’ve sent your {isFlight ? "e-tickets" : "voucher"} and receipt to <b className="text-navy-900">{booking.customerEmail}</b>.
+                Thank you, {firstName(booking)}. {simulated ? <>This is a simulated confirmation. No real card was charged, reservation made or email sent. Contact: <b className="text-navy-900">{booking.customerEmail}</b>.</> : <>We’ve sent your {isFlight ? "e-tickets" : "voucher"} and receipt to <b className="text-navy-900">{booking.customerEmail}</b>.</>}
               </p>
             </div>
           </div>
@@ -87,7 +88,7 @@ export function ConfirmationView({ booking, signedIn }: { booking: Booking; sign
             <ButtonLink href={`/documents/invoice/${booking.id}`} target="_blank" size="lg" variant="outline" leftIcon={<Receipt className="h-4 w-4" />}>
               View / download invoice
             </ButtonLink>
-            <Button size="lg" variant="outline" onClick={() => resendEmail(booking, "Booking confirmation (resent)")} leftIcon={<Mail className="h-4 w-4" />}>
+            <Button size="lg" variant="outline" disabled={simulated} onClick={() => resendEmail(booking, "Booking confirmation (resent)")} leftIcon={<Mail className="h-4 w-4" />}>
               Email confirmation
             </Button>
             <ButtonLink href="/" size="lg" variant="ghost" leftIcon={<Home className="h-4 w-4" />}>
@@ -98,7 +99,7 @@ export function ConfirmationView({ booking, signedIn }: { booking: Booking; sign
       </section>
       {!signedIn && (
         <InlineNotice tone="info" title="Keep your booking safe" className="mb-6">
-          Save your reference <b>{booking.id}</b> — you can always find this booking under{" "}
+          {simulated ? <>Save your reference <b>{booking.id}</b> and keep this browser session to reopen this confirmation.</> : <>Save your reference <b>{booking.id}</b> — you can always find this booking under{" "}
           <Link href="/manage-booking" className="font-bold underline">
             Manage booking
           </Link>{" "}
@@ -106,7 +107,7 @@ export function ConfirmationView({ booking, signedIn }: { booking: Booking; sign
           <Link href={`/sign-up?email=${encodeURIComponent(booking.customerEmail)}`} className="font-bold underline">
             create an account
           </Link>{" "}
-          with the same email to see all your trips in one place.
+          with the same email to see all your trips in one place.</>}
         </InlineNotice>
       )}
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_340px]">
@@ -117,7 +118,7 @@ export function ConfirmationView({ booking, signedIn }: { booking: Booking; sign
         <aside className="space-y-6">
           <Panel title="What happens next" id="next-h">
             <ol className="space-y-3 text-[13px] text-slate-700">
-              {NEXT_STEPS[booking.product].map((s) => (
+              {(simulated ? ["This confirmation is simulated; no live booking or visa application was submitted.","No email was delivered and no real money was taken.","Keep this confirmation and booking reference."] : NEXT_STEPS[booking.product]).map((s) => (
                 <li key={s}>{s}</li>
               ))}
             </ol>

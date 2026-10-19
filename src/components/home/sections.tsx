@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, type FormEvent } from "react";
+import { useEffect, useMemo, useState, type FormEvent } from "react";
 import Link from "next/link";
 import { ArrowRight, Check, Clock3, Headset, Layers, MessageCircle, Phone, ShieldCheck, Sparkles, Tag } from "lucide-react";
 import { ScoreBadge, Stars } from "@/components/brand";
@@ -9,13 +9,14 @@ import { Photo } from "@/components/photo";
 import { Button, ButtonLink } from "@/components/ui/button";
 import { Input } from "@/components/ui/form";
 import { Badge, SectionHeading } from "@/components/ui/primitives";
+import {subscribeNewsletter} from "@/lib/engine/inquiries";
+import {NEWSLETTER_CONSENT_TEXT} from "@cheaperfly/api-contracts/inquiries";
 import { toast } from "@/components/ui/toast";
 import { HOTELS, IMG, getDestination } from "@/data/hotels";
 import { dealCriteria } from "@/lib/engine/deals";
 import { defaultHotelDates, defaultOccupancy, flightSearchHref, hotelDetailHref } from "@/lib/engine/criteria";
-import { bestQuote, type HotelCriteria } from "@/lib/engine/hotels";
-import { umrahAdultPackagePrice } from "@/lib/engine/pricing";
-import { defaultUmrahConfig, getUmrahPackages, resolveUmrahPricingInput } from "@/lib/engine/umrah";
+import { hotelService, type HotelCriteria, type RoomQuote } from "@/lib/engine/hotels";
+import { umrahService, packageFromPrice } from "@/lib/engine/umrah";
 import { useFeatures, useSiteConfig } from "@/lib/site-config";
 import { cn } from "@/lib/utils";
 
@@ -123,12 +124,15 @@ export function Inspiration() {
 export function Newsletter() {
   const [email, setEmail] = useState("");
   const [state, setState] = useState<"idle" | "error" | "done">("idle");
-  const onSubmit = (e: FormEvent) => {
-    e.preventDefault();
-    if (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
-      setState("done");
-      toast.success("You're subscribed. Watch your inbox for fare drops.");
-    } else setState("error");
+  const [saving,setSaving]=useState(false);
+  const [serverError,setServerError]=useState<string|null>(null);
+  const onSubmit = async (e: FormEvent) => {
+    e.preventDefault();if(saving)return;
+    if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())){setState('error');return;}
+    setSaving(true);setServerError(null);
+    try{await subscribeNewsletter(email.trim());setState('done');toast.success('Subscription consent saved. No email was sent.');}
+    catch{setServerError('Could not save your subscription. Please try again.');}
+    finally{setSaving(false);}
   };
   return (
     <section aria-labelledby="news-h" className="container-page pt-24">
@@ -137,11 +141,11 @@ export function Newsletter() {
           <h2 id="news-h" className="text-2xl font-extrabold">
             Get fare drops before everyone else
           </h2>
-          <p className="mt-1.5 text-[15px] text-slate-600">One short email a week with the best flight, hotel and Umrah deals. Unsubscribe any time.</p>
+          <p className="mt-1.5 text-[15px] text-slate-600">{NEWSLETTER_CONSENT_TEXT} No email is sent in this simulation.</p>
         </div>
         {state === "done" ? (
           <p role="status" className="flex items-center gap-2 rounded-lg bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-800">
-            <Check className="h-4 w-4" aria-hidden /> Thanks — you’re on the list.
+            <Check className="h-4 w-4" aria-hidden /> Thanks — your consent is saved. No email was sent.
           </p>
         ) : (
           <form onSubmit={onSubmit} noValidate className="w-full lg:max-w-md">
@@ -163,10 +167,11 @@ export function Newsletter() {
                   }}
                 />
               </div>
-              <Button type="submit" size="md" className="h-11">
+              <Button type="submit" size="md" className="h-11" loading={saving}>
                 Subscribe
               </Button>
             </div>
+            {serverError && <p role="alert" className="mt-1.5 text-xs font-medium text-red-600">{serverError}</p>}
             {state === "error" && (
               <p role="alert" className="mt-1.5 text-xs font-medium text-red-600">
                 Please enter a valid email address.
@@ -181,7 +186,7 @@ export function Newsletter() {
 
 export function RecommendedHotels() {
   const { fmtGbp } = useCurrency();
-  const items = useMemo(
+  const requests = useMemo(
     () =>
       RECOMMENDED_HOTELS.map((id) => {
         const hotel = HOTELS.find((h) => h.id === id)!;
@@ -192,10 +197,13 @@ export function RecommendedHotels() {
           checkOut: dates.checkOut,
           occupancy: defaultOccupancy(),
         };
-        return { hotel, criteria, quote: bestQuote(hotel, criteria) };
+        return { hotelId:hotel.id, criteria };
       }),
     [],
   );
+  const [items,setItems]=useState<{hotel:(typeof HOTELS)[number];criteria:HotelCriteria;quote:RoomQuote}[]>([]);
+  const [error,setError]=useState(false);
+  useEffect(()=>{let cancelled=false;hotelService.previews(requests).then(items=>{if(!cancelled)setItems(items);}).catch(()=>{if(!cancelled)setError(true);});return ()=>{cancelled=true;};},[requests]);
   return (
     <section aria-labelledby="hotels-h" className="pt-20">
       <div className="container-page">
@@ -212,6 +220,7 @@ export function RecommendedHotels() {
       </div>
       <div className="container-page">
         <ul className="scrollbar-none -mx-4 flex snap-x gap-4 overflow-x-auto px-4 pb-3 sm:mx-0 sm:px-0">
+          {items.length===0&&<li role="status">{error?"Recommended stays are unavailable. Please search for a hotel.":"Finding recommended stays…"}</li>}
           {items.map(({ hotel, criteria, quote }) => (
             <li key={hotel.id} className="w-[290px] shrink-0 snap-start sm:w-[310px]">
               <Link href={hotelDetailHref(hotel.id, criteria)} className="group block overflow-hidden rounded-xl border border-slate-200 bg-white transition-shadow hover:shadow-lift">
@@ -329,13 +338,9 @@ export function SupportBand() {
 
 export function UmrahBand() {
   const { fmtGbp } = useCurrency();
-  const items = useMemo(() => {
-    const packages = getUmrahPackages().filter((p) => p.departures.length);
-    return ["essential-umrah-7-nights", "family-umrah-10-nights", "premium-haram-view-10-nights"]
-      .map((slug) => packages.find((p) => p.slug === slug))
-      .filter((p) => !!p)
-      .map((p) => ({ p, price: umrahAdultPackagePrice(resolveUmrahPricingInput(p, defaultUmrahConfig(p, { adults: 1 })), "GBP") }));
-  }, []);
+  const [items,setItems]=useState<{p:import("@/lib/types/umrah").UmrahPackage;price:number}[]>([]);
+  const [error,setError]=useState(false);
+  useEffect(()=>{let cancelled=false;umrahService.search().then(packages=>{if(!cancelled)setItems(["essential-umrah-7-nights","family-umrah-10-nights","premium-haram-view-10-nights"].map(slug=>packages.find(p=>p.slug===slug)).filter(p=>!!p).map(p=>({p,price:packageFromPrice(p,"GBP")})));}).catch(()=>{if(!cancelled)setError(true);});return ()=>{cancelled=true;};},[]);
   return (
     <section aria-labelledby="umrah-h" className="mt-24 bg-umrah-900 py-20 text-white">
       <div className="container-page">
@@ -354,6 +359,7 @@ export function UmrahBand() {
           </ButtonLink>
         </div>
         <ul className="grid gap-5 md:grid-cols-3">
+          {items.length===0&&<li role="status">{error?"Packages are unavailable. Please browse again shortly.":"Finding packages…"}</li>}
           {items.map(({ p, price }) => (
             <li key={p.slug}>
               <Link

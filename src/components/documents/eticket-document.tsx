@@ -44,7 +44,7 @@ function TicketPage({ b, index }: { b: FlightBooking; index: number }) {
         </div>
         <div className="sm:text-right">
           <p className={LABEL}>E-ticket number</p>
-          <p className="font-mono text-xl font-extrabold text-navy-900">{p.ticketNumber}</p>
+          <p className="font-mono text-xl font-extrabold text-navy-900">{b.refundedPassengerIds?.includes(p.id) ? "CANCELLED — SIMULATED" : p.ticketNumber || "SIMULATED"}</p>
           <p className="text-xs text-slate-500">
             {b.offer.airlineName} · {b.fare.name}
           </p>
@@ -139,7 +139,7 @@ function TicketPage({ b, index }: { b: FlightBooking; index: number }) {
           <li>Departure and arrival times are local to each airport.</li>
         </ul>
         <div className="shrink-0 text-center">
-          <Barcode value={`${p.ticketNumber}${b.pnr}`} className="h-11 w-56" />
+          <Barcode value={`${p.ticketNumber || "SIMULATED"}${b.pnr}`} className="h-11 w-56" />
           <p className="mt-1 text-[10px] text-slate-400">Illustrative barcode · prototype document</p>
         </div>
       </div>
@@ -153,7 +153,7 @@ function TicketPage({ b, index }: { b: FlightBooking; index: number }) {
 /** One e-ticket page per passenger. */
 export function ETicketDocument({ reference }: { reference: string }) {
   return (
-    <DocumentShell reference={reference}>
+    <DocumentShell reference={reference} documentKind="eticket">
       {(b) =>
         b.product !== "flight" ? (
           <Paper>

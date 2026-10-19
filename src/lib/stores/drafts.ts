@@ -1,7 +1,6 @@
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
 import type { HotelCriteria, RoomQuote } from "@/lib/engine/hotels";
-import type { CardOutcome } from "@/lib/engine/payment";
 import type { AssistanceRequest } from "@/lib/engine/pricing";
 import type { FlightCriteria, Offer, Pax } from "@/lib/types/flights";
 import type { UmrahConfig } from "@/lib/types/umrah";
@@ -11,7 +10,6 @@ import type {
   FlightPassenger,
   HotelDraft,
   PaxType,
-  PaymentMethod,
   UmrahDraft,
   UmrahTraveller,
 } from "@/lib/types/booking";
@@ -81,11 +79,11 @@ interface DraftsState {
   clearSeats: () => void;
   clearFlight: () => void;
 
-  startHotel: (criteria: HotelDraft["criteria"], hotelId: string, quote: RoomQuote, contact?: Contact) => void;
+  startHotel: (criteria: HotelDraft["criteria"], hotelId: string, quote: RoomQuote, contact?: Contact, serverQuote?: import("@cheaperfly/api-contracts/hotels").HotelQuote) => void;
   patchHotel: (patch: Partial<HotelDraft>) => void;
   clearHotel: () => void;
 
-  startUmrah: (packageId: string, config: UmrahConfig, contact?: Contact) => void;
+  startUmrah: (packageId: string, config: UmrahConfig, contact?: Contact, serverQuote?: import("@cheaperfly/api-contracts/umrah").UmrahQuote) => void;
   patchUmrah: (patch: Partial<UmrahDraft>) => void;
   /** Changing the party size resets the traveller forms. */
   updateUmrahConfig: (patch: Partial<UmrahConfig>) => void;
@@ -96,7 +94,7 @@ interface DraftsState {
 export const useDraftsStore = create<DraftsState>()(
   persist(
     (set) => {
-      const updateFlight = (fn: (f: FlightDraft) => Partial<FlightDraft>) => set((s) => (s.flight ? { flight: { ...s.flight, ...fn(s.flight) } } : s));
+      const updateFlight = (fn: (f: FlightDraft) => Partial<FlightDraft>) => set((s) => (s.flight ? { flight: { ...s.flight, quote: undefined, ...fn(s.flight) } } : s));
       return {
         flight: null,
         hotel: null,
@@ -106,7 +104,7 @@ export const useDraftsStore = create<DraftsState>()(
 
         startFlight: (criteria, searchId, offer, contact) =>
           set((s) => {
-            const existing = s.flight && s.flight.offer.id === offer.id ? s.flight : null;
+            const existing = s.flight && s.flight.offer.id === offer.id && s.flight.searchId === searchId ? s.flight : null;
             if (existing) return { flight: { ...existing, criteria }, active: "flight" };
             return {
               flight: {
@@ -156,12 +154,15 @@ export const useDraftsStore = create<DraftsState>()(
         clearSeats: () => updateFlight((f) => ({ extras: { ...f.extras, seats: {} } })),
         clearFlight: () => set((s) => ({ flight: null, active: s.active === "flight" ? null : s.active })),
 
-        startHotel: (criteria, hotelId, quote, contact) =>
+        startHotel: (criteria, hotelId, quote, contact, serverQuote) =>
           set((s) => ({
             hotel: {
               criteria,
               hotelId,
               quote,
+              searchId:serverQuote?.searchId,
+              hotel:serverQuote?.hotel,
+              serverQuote,
               guests: Array.from({ length: Math.max(1, criteria.occupancy.rooms) }, (_, i) => ({ title: "", firstName: "", lastName: "", isLead: i === 0 })),
               contact: s.hotel?.hotelId === hotelId && s.hotel.contact.email ? s.hotel.contact : (contact ?? EMPTY_CONTACT),
               specialRequests: [],
@@ -175,11 +176,12 @@ export const useDraftsStore = create<DraftsState>()(
         patchHotel: (patch) => set((s) => (s.hotel ? { hotel: { ...s.hotel, ...patch } } : s)),
         clearHotel: () => set((s) => ({ hotel: null, active: s.active === "hotel" ? null : s.active })),
 
-        startUmrah: (packageId, config, contact) =>
+        startUmrah: (packageId, config, contact, serverQuote) =>
           set((s) => ({
             umrah: {
               packageId,
               config,
+              serverQuote,
               travellers: blankTravellers(config),
               contact: s.umrah?.contact.email ? s.umrah.contact : (contact ?? EMPTY_CONTACT),
               notes: "",
@@ -195,7 +197,7 @@ export const useDraftsStore = create<DraftsState>()(
             const config = { ...s.umrah.config, ...patch };
             const partyChanged =
               config.adults !== s.umrah.config.adults || config.children !== s.umrah.config.children || config.infants !== s.umrah.config.infants;
-            return { umrah: { ...s.umrah, config, travellers: partyChanged ? blankTravellers(config) : s.umrah.travellers } };
+            return { umrah: { ...s.umrah, documents:undefined, serverQuote:undefined, config, travellers: partyChanged ? blankTravellers(config) : s.umrah.travellers } };
           }),
         clearUmrah: () => set((s) => ({ umrah: null, active: s.active === "umrah" ? null : s.active })),
       };
@@ -206,15 +208,10 @@ export const useDraftsStore = create<DraftsState>()(
 
 export type { HotelCriteria };
 
-/** What the payment page hands to /checkout/processing. Card details never leave the form. */
+/** Per-tab replay payload; card numbers and CVV never enter this store. */
 export interface PendingPayment {
-  product: "flight" | "hotel" | "umrah";
-  method: PaymentMethod;
-  brand: string;
-  last4: string;
-  cardholder?: string;
-  outcome: CardOutcome;
-  billingCountry?: string;
+  product:"flight"|"hotel"|"umrah";
+  request:import("@cheaperfly/api-contracts/checkout").CheckoutRequest;
 }
 
 interface CheckoutState {
@@ -238,6 +235,6 @@ export const useCheckoutStore = create<CheckoutState>()(
       setLastRef: (lastRef) => set({ lastRef }),
       setFailure: (failure) => set({ failure }),
     }),
-    { name: "cf.checkout", storage: createJSONStorage(() => sessionStorage), skipHydration: true },
+    { name: "cf.checkout", version: 1, migrate: () => ({pending:null,lastRef:null,failure:null}), storage: createJSONStorage(() => sessionStorage), skipHydration: true },
   ),
 );

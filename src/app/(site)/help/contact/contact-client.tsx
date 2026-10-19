@@ -7,5 +7,5 @@ export function ContactOptions() {
 }
 
 export function ContactForm({ defaultBooking }: { defaultBooking?: string }) {
-  return <SupportForm defaultBooking={defaultBooking} />;
+  return <SupportForm defaultBooking={defaultBooking} inquiry />;
 }

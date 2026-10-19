@@ -43,6 +43,7 @@ export function BackLink({ href, children }: { href: string; children: ReactNode
 
 /** Logs a simulated email on the booking and confirms with a toast. */
 export function resendEmail(booking: Booking, type: string) {
+  if(booking.providerMode === "simulated"){toast.info("Simulated confirmation only. No email was sent.");return;}
   useBookingsStore.getState().updateBooking(booking.id, (b) => ({ ...b, emails: [...b.emails, { at: new Date().toISOString(), type, to: b.customerEmail }] }));
   toast.success(`Confirmation sent to ${booking.customerEmail} (simulated)`);
 }
@@ -76,7 +77,7 @@ export function DocumentsPanel({ booking }: { booking: Booking }) {
           <span className="flex items-center gap-3 text-sm font-semibold text-navy-900">
             <Mail className="h-5 w-5 text-brand-500" aria-hidden /> Email documents to {booking.customerEmail}
           </span>
-          <Button size="sm" variant="subtle" onClick={() => resendEmail(booking, booking.product === "flight" ? "E-ticket & invoice (resent)" : "Voucher & invoice (resent)")}>
+          <Button size="sm" variant="subtle" disabled={booking.providerMode === "simulated"} onClick={() => resendEmail(booking, booking.product === "flight" ? "E-ticket & invoice (resent)" : "Voucher & invoice (resent)")}>
             Send email
           </Button>
         </li>
@@ -124,14 +125,14 @@ export function PaymentPanel({ booking }: { booking: Booking }) {
         <Term label="Transaction">
           <dd className="mt-0.5 font-mono text-[13px] font-semibold text-navy-900">{p.transactionId}</dd>
         </Term>
-        <Term label="Paid on">
-          <dd className="mt-0.5 font-semibold text-navy-900 tnum">{formatDateTimeMed(p.paidAt)}</dd>
+        <Term label={p.status === "pending" ? "Payment due" : "Paid on"}>
+          <dd className="mt-0.5 font-semibold text-navy-900 tnum">{p.status === "pending" ? "At the hotel" : formatDateTimeMed(p.paidAt)}</dd>
         </Term>
         <Term label="Invoice">
           <dd className="mt-0.5 font-semibold text-navy-900">{booking.invoiceNo}</dd>
         </Term>
       </dl>
-      <PriceBreakdownView breakdown={booking.pricing} totalLabel={p.status === "refunded" ? "Total (refunded)" : "Total paid"} />
+      <PriceBreakdownView breakdown={booking.pricing} totalLabel={p.status === "pending" ? "Due at property" : p.status === "refunded" ? "Total (refunded)" : "Total paid"} />
     </Panel>
   );
 }

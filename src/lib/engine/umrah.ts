@@ -9,7 +9,9 @@ import {
 import { addDaysISO, parseDate, todayISO } from "@/lib/engine/dates";
 import { umrahAdultPackagePrice } from "@/lib/engine/pricing";
 import { createRng } from "@/lib/engine/rng";
-import { sleep } from "@/lib/engine/service";
+import { apiRequest } from "@/lib/api/client";
+import type { ServiceOptions } from "@/lib/engine/service";
+import type { UmrahConfiguration,UmrahQuote,UmrahDocuments } from "@cheaperfly/api-contracts/umrah";
 import type { CurrencyCode } from "@/lib/engine/currency";
 import type {
   UmrahConfig,
@@ -226,6 +228,7 @@ export function getUmrahPackage(slug: string): UmrahPackage | undefined {
 /** Starting configuration: cheapest departure, first departure city, quad room, package defaults, 2 adults. */
 export function defaultUmrahConfig(pkg: UmrahPackage, overrides?: Partial<UmrahConfig>): UmrahConfig {
   const cheapest = pkg.departures.reduce((a, b) => (b.priceFactor < a.priceFactor ? b : a), pkg.departures[0]);
+  if(!cheapest) throw new Error("This package has no available departures.");
   return {
     departureDate:
       overrides?.departureDate && pkg.departures.some((d) => d.date === overrides.departureDate) ? overrides.departureDate : cheapest.date,
@@ -260,21 +263,22 @@ export function resolveUmrahPricingInput(pkg: UmrahPackage, config: UmrahConfig)
 
 /** "From" price per adult for listing cards: cheapest departure, 1 adult, given room type. */
 export function packageFromPrice(pkg: UmrahPackage, currency: CurrencyCode, roomType: UmrahRoomType = "quad"): number {
+  if(pkg.fromPrices)return pkg.fromPrices[currency][roomType];
   const config = defaultUmrahConfig(pkg, { roomType, adults: 1 });
   return umrahAdultPackagePrice(resolveUmrahPricingInput(pkg, config), currency);
 }
 
-export const umrahService = {
-  async search(criteria: UmrahSearchCriteria): Promise<UmrahPackage[]> {
-    await sleep(900);
-    return getUmrahPackages().filter((p) => {
-      if (!p.departures.length || (criteria.departureCity && !p.departureCities.includes(criteria.departureCity))) return false;
-      if (criteria.nights && criteria.nights !== "any" && Math.abs(p.nights - Number(criteria.nights)) > 1) return false;
-      return !criteria.month || criteria.month === "any" || p.departures.some((d) => d.date.startsWith(criteria.month!));
-    });
-  },
-  async getPackage(slug: string): Promise<UmrahPackage | null> {
-    await sleep(350);
-    return getUmrahPackage(slug) ?? null;
-  },
+async function post<T>(path:string,body:unknown):Promise<T>{return (await apiRequest<T>("public","umrah/"+path,{method:"POST",body:JSON.stringify(body)})).data;}
+export const umrahService={
+ search:(criteria:UmrahSearchCriteria={},opts?:ServiceOptions)=>post<UmrahPackage[]>("search",{...criteria,...(opts?.scenario&&opts.scenario!=="ok"?{scenario:opts.scenario}:{})}),
+ getPackage:async(slug:string)=>(await apiRequest<UmrahPackage>("public","umrah/packages/"+slug)).data,
+ configuration:(packageId:string,config:UmrahConfig,currency:CurrencyCode)=>post<UmrahConfiguration>("configurations",{packageId,config,currency}),
+ quote:(packageId:string,config:UmrahConfig,currency:CurrencyCode)=>post<UmrahQuote>("quotes",{packageId,config,currency}),
+ travellers:(quoteId:string,travellers:import("@/lib/types/booking").UmrahTraveller[],contact:import("@/lib/types/booking").Contact,notes:string)=>post<UmrahDocuments>("travellers",{quoteId,travellers,contact,notes}),
 };
+const quotes=new Map<string,Promise<UmrahQuote>>();
+export const umrahQuoteKey=(packageId:string,config:UmrahConfig,currency:CurrencyCode,identity:string)=>JSON.stringify([packageId,config,currency,identity]);
+export function loadUmrahQuote(packageId:string,config:UmrahConfig,currency:CurrencyCode,identity:string):Promise<UmrahQuote>{
+ const key=umrahQuoteKey(packageId,config,currency,identity);const found=quotes.get(key);if(found)return found.then(q=>{if(Date.parse(q.expiresAt)<=Date.now()){quotes.delete(key);return loadUmrahQuote(packageId,config,currency,identity);}return q;});
+ const pending=umrahService.quote(packageId,config,currency);quotes.set(key,pending);pending.catch(()=>quotes.delete(key));if(quotes.size>50)quotes.delete(quotes.keys().next().value!);return pending;
+}

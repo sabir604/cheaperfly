@@ -1,9 +1,13 @@
 "use client";
 
 import { useEffect, type ReactNode } from "react";
+import { useServerBookings,loadServerBookings } from "@/lib/engine/server-bookings";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { Bell, CalendarRange, FileText, Headset, LayoutDashboard, LogOut, Receipt, Settings, Ticket, User, Users } from "lucide-react";
+import { StateView } from "@/components/ui/feedback";
+import { Button } from "@/components/ui/button";
+import { useAccountData,loadAccountData } from "@/lib/engine/account";
 import { Skeleton } from "@/components/ui/primitives";
 import { toast } from "@/components/ui/toast";
 import { signOut } from "@/lib/engine/auth";
@@ -29,16 +33,32 @@ const NAV = [
 /** Account frame: sidebar on desktop, scrolling tab strip on mobile. Signed-out visitors are sent to sign-in and brought back. */
 export function AccountShell({ children }: { children: ReactNode }) {
   const hydrated = useHydrated();
+  const bookingStatus=useServerBookings(s=>s.status);
+  const bookingOwner=useServerBookings(s=>s.owner);
+
+  const accountStatus = useAccountData((s)=>s.status);
+  const accountError = useAccountData((s)=>s.error);
   const user = useSessionStore((s) => s.user);
   const unread = useAccountStore((s) => s.notifications.filter((n) => !n.read).length);
   const pathname = usePathname() ?? "/account";
   const router = useRouter();
+  useEffect(()=>{if(hydrated && user)void loadServerBookings(user.id);},[hydrated,user,pathname]);
 
   useEffect(() => {
     if (hydrated && !user) router.replace(`/sign-in?next=${encodeURIComponent(pathname)}`);
   }, [hydrated, user, pathname, router]);
 
-  if (!hydrated || !user)
+  if (hydrated && user && (accountStatus === "error" || bookingStatus === "error"))
+    return (
+      <StateView
+        tone="error"
+        title="Could not load your account"
+        description={accountError ?? undefined}
+        actions={<Button onClick={() => void Promise.all([loadAccountData(),loadServerBookings(user!.id)])}>Try again</Button>}
+      />
+    );
+
+  if (!hydrated || !user || accountStatus !== "ready" || bookingStatus !== "ready" || bookingOwner !== user.id)
     return (
       <div className="container-page py-8" aria-busy>
         <div className="grid gap-8 lg:grid-cols-[260px_1fr]">
@@ -106,8 +126,8 @@ export function AccountShell({ children }: { children: ReactNode }) {
               ))}
               <button
                 type="button"
-                onClick={() => {
-                  signOut();
+                onClick={async () => {
+                  if (!(await signOut())) return toast.error("Could not sign out. Please try again.");
                   toast.info("You've been signed out");
                   router.push("/");
                 }}

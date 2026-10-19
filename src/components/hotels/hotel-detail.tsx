@@ -12,12 +12,14 @@ import { OccupancyPicker } from "@/components/search/pickers";
 import { Button } from "@/components/ui/button";
 import { Accordion } from "@/components/ui/disclosure";
 import { Dialog, DialogContent } from "@/components/ui/overlay";
+import { InlineNotice, StateView } from "@/components/ui/feedback";
+import { validHotelCriteria, type HotelAvailability } from "@cheaperfly/api-contracts/hotels";
 import { Badge } from "@/components/ui/primitives";
 import { toast } from "@/components/ui/toast";
 import type { Hotel, HotelRoom } from "@/data/hotels";
-import { hotelDetailHref } from "@/lib/engine/criteria";
+import { hotelDetailHref, hotelSearchHref } from "@/lib/engine/criteria";
 import { formatDateMed, formatDayShort, nightsBetween } from "@/lib/engine/dates";
-import { MEAL_LABEL, quoteRoom, roomFits, type HotelCriteria, type RoomQuote } from "@/lib/engine/hotels";
+import { MEAL_LABEL, hotelService, loadHotelQuote, roomFits, type HotelCriteria, type RoomQuote } from "@/lib/engine/hotels";
 import { useDraftsStore } from "@/lib/stores/drafts";
 import { useSessionStore } from "@/lib/stores/session";
 import { cn, plural } from "@/lib/utils";
@@ -94,11 +96,10 @@ function Gallery({ hotel }: { hotel: Hotel }) {
   );
 }
 
-function RoomCard({ room, hotel, criteria, onReserve }: { room: HotelRoom; hotel: Hotel; criteria: HotelCriteria; onReserve: (q: RoomQuote) => void }) {
+function RoomCard({ room, hotel, criteria, onReserve, quotes, reserving }: { room: HotelRoom; hotel: Hotel; criteria: HotelCriteria; quotes:RoomQuote[]; reserving:boolean; onReserve: (q: RoomQuote) => void }) {
   const { fmtGbp } = useCurrency();
   const [photo, setPhoto] = useState(0);
   const fits = roomFits(room, criteria.occupancy);
-  const quotes = hotel.ratePlans.map((p) => quoteRoom(hotel, room, p.id, criteria)).filter((q): q is RoomQuote => !!q);
   const from = quotes.length ? Math.min(...quotes.map((q) => q.perNight)) : 0;
   return (
     <article className={cn("overflow-hidden rounded-xl border bg-white", fits ? "border-slate-200" : "border-slate-200 opacity-80")} aria-labelledby={`room-${room.id}`}>
@@ -180,7 +181,7 @@ function RoomCard({ room, hotel, criteria, onReserve }: { room: HotelRoom; hotel
                       {fmtGbp(q.roomTotal)} for {plural(q.nights, "night")}
                     </p>
                   </div>
-                  <Button disabled={!fits} onClick={() => onReserve(q)} aria-label={`Reserve ${room.name}, ${q.ratePlanName}`}>
+                  <Button disabled={!fits||reserving} loading={reserving} onClick={() => onReserve(q)} aria-label={`Reserve ${room.name}, ${q.ratePlanName}`}>
                     Reserve
                   </Button>
                 </div>
@@ -203,12 +204,28 @@ function Fact({ label, children }: { label: string; children: ReactNode }) {
 }
 
 /** `/hotels/[slug]`: gallery, sticky section nav, rooms with rate plans, facilities, map, policies and reviews. */
-export function HotelDetail({ hotel, criteria: initial }: { hotel: Hotel; criteria: HotelCriteria }) {
+export function HotelDetail({ hotel: initialHotel, criteria: initial }: { hotel: Hotel; criteria: HotelCriteria }) {
   const router = useRouter();
-  const { fmtGbp } = useCurrency();
+  const { fmtGbp, currency } = useCurrency();
+  const user=useSessionStore(s=>s.user);
   const startHotel = useDraftsStore((s) => s.startHotel);
   const profile = useSessionStore((s) => s.profile);
   const [criteria, setCriteria] = useState(initial);
+  const [availability,setAvailability]=useState<{key:string;data?:HotelAvailability;error?:string}|null>(null);
+  const [attempt,setAttempt]=useState(0);
+  const [reserving,setReserving]=useState(false);
+  const [reserveError,setReserveError]=useState<string|null>(null);
+  const requestKey=JSON.stringify(criteria);
+  const current=availability?.key===requestKey?availability:null;
+  const hotel=current?.data?.hotel??initialHotel;
+  const quotes=current?.data?.quotes??[];
+  useEffect(()=>{
+    let cancelled=false;
+    if(validHotelCriteria(criteria))hotelService.availability(initialHotel.id,criteria).then(data=>{if(!cancelled)setAvailability({key:requestKey,data});}).catch((error:Error)=>{if(!cancelled)setAvailability({key:requestKey,error:error.message});});
+    return ()=>{cancelled=true;};
+    // The serialized key covers the complete stay and occupancy.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  },[requestKey,initialHotel.id,attempt]);
   const [saved, setSaved] = useState(false);
   const [section, setSection] = useState("overview");
   const [changing, setChanging] = useState(false);
@@ -228,19 +245,23 @@ export function HotelDetail({ hotel, criteria: initial }: { hotel: Hotel; criter
     return () => observer.disconnect();
   }, []);
 
-  const fittingQuotes = hotel.rooms
-    .filter((r) => roomFits(r, criteria.occupancy))
-    .flatMap((r) => hotel.ratePlans.map((p) => quoteRoom(hotel, r, p.id, criteria)))
-    .filter((q): q is RoomQuote => !!q);
+  const fittingQuotes = quotes.filter(q=>{const room=hotel.rooms.find(r=>r.id===q.roomId);return !!room&&roomFits(room,criteria.occupancy);});
   const fromPrice = fittingQuotes.length ? Math.min(...fittingQuotes.map((q) => q.perNight)) : null;
 
   const update = (next: HotelCriteria) => {
+    if(!validHotelCriteria(next)){setReserveError("Choose valid dates, room counts and guest ages before continuing.");return;}
+    setReserveError(null);
     setCriteria(next);
     router.replace(hotelDetailHref(hotel.id, next), { scroll: false });
   };
-  const reserve = (quote: RoomQuote) => {
-    startHotel(criteria, hotel.id, quote, profile ? { email: profile.email, countryCode: profile.countryCode, mobile: profile.mobile } : undefined);
-    router.push("/hotels/book/guest");
+  const reserve = async (quote: RoomQuote) => {
+    if(!current?.data||reserving)return;
+    setReserving(true);setReserveError(null);
+    try {
+      const serverQuote=await loadHotelQuote(current.data.searchId,hotel.id,quote.roomId,quote.ratePlanId,currency,user?.id??"guest");
+      startHotel(serverQuote.criteria,hotel.id,serverQuote.room,profile ? {email:profile.email,countryCode:profile.countryCode,mobile:profile.mobile}:undefined,serverQuote);
+      router.push("/hotels/book/guest");
+    } catch(error){setReserveError(error instanceof Error?error.message:"Could not reserve this room. Please try again.");}finally{setReserving(false);}
   };
   const scrollTo = (id: string) => document.getElementById(`sec-${id}`)?.scrollIntoView({ behavior: "smooth", block: "start" });
   const topReview = [...hotel.reviews].sort((a, b) => b.score - a.score)[0];
@@ -248,6 +269,7 @@ export function HotelDetail({ hotel, criteria: initial }: { hotel: Hotel; criter
 
   return (
     <div>
+      {reserveError&&<InlineNotice tone="error">{reserveError}</InlineNotice>}
       <div className="container-page pb-2 pt-5">
         <nav aria-label="Breadcrumb" className="mb-3 text-[13px] text-slate-500">
           <Link href="/hotels" className="hover:text-brand-600">
@@ -255,7 +277,7 @@ export function HotelDetail({ hotel, criteria: initial }: { hotel: Hotel; criter
           </Link>
           {" / "}
           <Link
-            href={`/hotels/search?dest=${hotel.city.toLowerCase()}&in=${criteria.checkIn}&out=${criteria.checkOut}&rooms=${o.rooms}&adt=${o.adults}&chd=${o.children}`}
+            href={hotelSearchHref(criteria)}
             className="hover:text-brand-600"
           >
             {hotel.city}
@@ -386,8 +408,10 @@ export function HotelDetail({ hotel, criteria: initial }: { hotel: Hotel; criter
               </div>
             )}
             <div className="space-y-5">
-              {hotel.rooms.map((room) => (
-                <RoomCard key={room.id} room={room} hotel={hotel} criteria={criteria} onReserve={reserve} />
+              {!current&&<p role="status">Checking room rates…</p>}
+            {current?.error&&<StateView tone="warning" title="We couldn’t load room rates" description={current.error} actions={<Button onClick={()=>setAttempt(n=>n+1)}>Try again</Button>} />}
+            {current?.data&&hotel.rooms.map((room) => (
+                <RoomCard key={room.id} room={room} hotel={hotel} criteria={criteria} onReserve={reserve} reserving={reserving} quotes={quotes.filter(q=>q.roomId===room.id)} />
               ))}
             </div>
             <p className="mt-3 text-xs text-slate-500">{hotel.taxNote}</p>

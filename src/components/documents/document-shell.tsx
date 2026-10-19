@@ -30,7 +30,7 @@ export function Barcode({ value, className = "" }: { value: string; className?: 
 }
 
 /** Grey print-preview backdrop with "Print / Save as PDF"; the booking is gated like the confirmation. */
-export function DocumentShell({ reference, children }: { reference: string; children: (b: Booking) => ReactNode }) {
+export function DocumentShell({ reference, documentKind, children }: { reference: string; documentKind: 'invoice'|'eticket'|'voucher'; children: (b: Booking) => ReactNode }) {
   return (
     <div className="min-h-screen bg-slate-200/70 py-6 print:bg-white print:py-0">
       <div className="no-print mx-auto mb-4 flex max-w-[860px] items-center justify-between gap-3 px-4">
@@ -42,7 +42,7 @@ export function DocumentShell({ reference, children }: { reference: string; chil
         </Button>
       </div>
       <div className="mx-auto max-w-[860px] px-4 print:max-w-none print:px-0">
-        <BookingGate reference={reference} mode="document">
+        <BookingGate reference={reference} mode="document" documentKind={documentKind}>
           {children}
         </BookingGate>
       </div>
@@ -60,7 +60,7 @@ export function PaperHeader({ title, subtitle, right }: { title: string; subtitl
     <div className="flex items-start justify-between gap-6 border-b-2 border-navy-900 pb-5">
       <div>
         <CheaperflyLogo />
-        <p className="mt-3 text-[11px] font-bold uppercase tracking-[0.18em] text-slate-500">{title}</p>
+        <p className="mt-3 text-[11px] font-bold uppercase tracking-[0.18em] text-slate-500">{title} · Simulated — not valid for travel</p>
         {subtitle && <p className="text-sm text-slate-600">{subtitle}</p>}
       </div>
       <div className="text-right text-xs leading-relaxed text-slate-600">{right}</div>

@@ -12,8 +12,8 @@ import { Button } from "@/components/ui/button";
 import { InlineNotice } from "@/components/ui/feedback";
 import { Field, Input } from "@/components/ui/form";
 import { IMG } from "@/data/hotels";
-import { bookingService } from "@/lib/engine/bookings/service";
-import { useBookingsStore } from "@/lib/stores/bookings";
+import { serverBookings } from "@/lib/engine/server-bookings";
+
 
 const lookupSchema = z.object({
   reference: z
@@ -34,7 +34,6 @@ const CAN_DO = [
 /** Guest lookup by reference (or PNR) and last name; a match grants this browser access to the booking. */
 export function LookupForm() {
   const router = useRouter();
-  const grantGuestAccess = useBookingsStore((s) => s.grantGuestAccess);
   const [error, setError] = useState<string | null>(null);
   const form = useForm<z.infer<typeof lookupSchema>>({ resolver: zodResolver(lookupSchema), defaultValues: { reference: "", lastName: "" } });
   const { errors, isSubmitting } = form.formState;
@@ -48,18 +47,12 @@ export function LookupForm() {
           noValidate
           onSubmit={form.handleSubmit(async (values) => {
             setError(null);
-            await new Promise((r) => setTimeout(r, 700));
-            const booking = bookingService.findByReference(values.reference, values.lastName);
-            if (booking) {
-              grantGuestAccess(booking.id);
-              router.push(`/manage-booking/${booking.id}`);
-              return;
+            try {
+              const access=await serverBookings.lookup(values.reference,values.lastName);
+              router.push(`/manage-booking/${access.reference}`);
+            } catch {
+              setError("We couldn't open that booking. Check the reference and last name, or sign in for account bookings. If you have tried repeatedly, please wait before trying again.");
             }
-            setError(
-              bookingService.get(values.reference.trim())
-                ? "The last name doesn't match that booking. Enter the surname of the lead traveller exactly as on the ticket or voucher."
-                : "We couldn't find a booking with those details. Check the reference (it starts with CF-) and the last name. In this prototype, bookings are stored on the device where they were made.",
-            );
           })}
           className="mt-8 space-y-5 rounded-xl border border-slate-200 bg-white p-6 sm:p-7"
         >

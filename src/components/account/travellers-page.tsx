@@ -18,6 +18,8 @@ import { useAccountStore } from "@/lib/stores/bookings";
 import type { SavedTraveller } from "@/lib/types/booking";
 import { initials } from "@/lib/utils";
 import { nameField } from "@/lib/validation";
+import { saveTraveller,deleteTraveller } from "@/lib/engine/account";
+import { ApiClientError } from "@/lib/api/client";
 import { PageTitle } from "./account-shell";
 
 const travellerSchema = z.object({
@@ -82,7 +84,6 @@ const CountryOptions = () => (
 );
 
 function TravellerDialog({ open, onOpenChange, editing }: { open: boolean; onOpenChange: (open: boolean) => void; editing: SavedTraveller | null }) {
-  const upsert = useAccountStore((s) => s.upsertTraveller);
   const form = useForm<TravellerValues>({ resolver: zodResolver(travellerSchema), defaultValues: EMPTY });
   const { errors, isSubmitting } = form.formState;
   const { reset } = form;
@@ -99,10 +100,14 @@ function TravellerDialog({ open, onOpenChange, editing }: { open: boolean; onOpe
         <form
           noValidate
           onSubmit={form.handleSubmit(async (values) => {
-            await new Promise((r) => setTimeout(r, 350));
-            upsert({ ...values, id: editing?.id });
-            toast.success(editing ? "Traveller updated" : "Traveller saved");
-            onOpenChange(false);
+            try {
+              await saveTraveller({ ...values, id: editing?.id });
+              toast.success(editing ? "Traveller updated" : "Traveller saved");
+              onOpenChange(false);
+            } catch(error) {
+              if(error instanceof ApiClientError && error.fields) for(const [field,messages] of Object.entries(error.fields)) if(field in EMPTY) form.setError(field as keyof TravellerValues,{type:"server",message:messages[0]});
+              toast.error(error instanceof Error ? error.message : "Please try again.");
+            }
           })}
           className="grid gap-4 sm:grid-cols-6"
         >
@@ -180,9 +185,9 @@ const Term = ({ children }: { children: string }) => <dt className="text-[11px] 
 
 export function TravellersPage() {
   const travellers = useAccountStore((s) => s.travellers);
-  const remove = useAccountStore((s) => s.removeTraveller);
   const [dialog, setDialog] = useState<{ open: boolean; editing: SavedTraveller | null }>({ open: false, editing: null });
   const [deleting, setDeleting] = useState<SavedTraveller | null>(null);
+  const [removing, setRemoving] = useState(false);
   const add = () => setDialog({ open: true, editing: null });
 
   return (
@@ -277,10 +282,17 @@ export function TravellersPage() {
             </Button>
             <Button
               variant="danger"
-              onClick={() => {
-                if (deleting) remove(deleting.id);
-                toast.success("Traveller deleted");
-                setDeleting(null);
+              loading={removing}
+              onClick={async () => {
+                if (removing) return;
+                setRemoving(true);
+                try {
+                  if (deleting) await deleteTraveller(deleting.id);
+                  toast.success("Traveller deleted");
+                  setDeleting(null);
+                } catch(error) {
+                  toast.error(error instanceof Error ? error.message : "Please try again.");
+                } finally { setRemoving(false); }
               }}
             >
               Delete

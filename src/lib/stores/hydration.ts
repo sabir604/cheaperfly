@@ -3,7 +3,7 @@
 import { create } from "zustand";
 import { useAccountStore, useBookingsStore } from "./bookings";
 import { useCheckoutStore, useDraftsStore } from "./drafts";
-import { useSessionStore, useUiStore } from "./session";
+import { useUiStore } from "./session";
 
 /**
  * Stores skip automatic hydration so server-rendered HTML and the first client render agree.
@@ -23,7 +23,6 @@ export async function rehydrateAll() {
   started = true;
   try {
     await Promise.all([
-      useSessionStore.persist.rehydrate(),
       useUiStore.persist.rehydrate(),
       useBookingsStore.persist.rehydrate(),
       useAccountStore.persist.rehydrate(),
@@ -33,5 +32,8 @@ export async function rehydrateAll() {
   } catch {
     // Corrupt or blocked storage: carry on with defaults.
   }
+  useAccountStore.setState({travellers:[],notifications:[]});
+  const { refreshSession } = await import("@/lib/engine/auth");
+  await refreshSession();
   useHydrationStore.getState().setHydrated(true);
 }

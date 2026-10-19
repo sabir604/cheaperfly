@@ -1,21 +1,24 @@
 "use client";
 
-import { useMemo } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { ArrowRight, MapPin, Star } from "lucide-react";
 import { Stars } from "@/components/brand";
 import { useCurrency } from "@/components/money";
 import { Photo } from "@/components/photo";
 import { Badge } from "@/components/ui/primitives";
-import { CATEGORY_LABEL, UMRAH_HOTELS } from "@/data/umrah";
-import { getUmrahPackages, packageFromPrice } from "@/lib/engine/umrah";
+import { CATEGORY_LABEL } from "@/data/umrah";
+import { umrahService, packageFromPrice } from "@/lib/engine/umrah";
 
 /** The first six packages with departures, as cards. */
 export function FeaturedPackages() {
   const { fmt, currency } = useCurrency();
-  const packages = useMemo(() => getUmrahPackages().filter((p) => p.departures.length).slice(0, 6), []);
+  const [packages,setPackages]=useState<import("@/lib/types/umrah").UmrahPackage[]>([]);
+  const [error,setError]=useState(false);
+  useEffect(()=>{let cancelled=false;umrahService.search().then(list=>{if(!cancelled)setPackages(list.slice(0,6));}).catch(()=>{if(!cancelled)setError(true);});return ()=>{cancelled=true;};},[]);
   return (
     <ul className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
+      {packages.length===0&&<li role="status">{error?"Packages are unavailable. Please try again.":"Finding packages…"}</li>}
       {packages.map((p, i) => (
         <li key={p.slug} className={i === 0 ? "md:col-span-2 lg:col-span-1 lg:row-span-1" : ""}>
           <Link href={`/umrah/packages/${p.slug}`} className="group flex h-full flex-col overflow-hidden rounded-xl border border-slate-200 bg-white transition-shadow hover:shadow-lift">
@@ -62,11 +65,13 @@ export function FeaturedPackages() {
 /** The three closest hotels to the Haram (Makkah) or the Prophet's Mosque (Madinah). */
 export function HolyHotels({ city }: { city: "makkah" | "madinah" }) {
   const { fmtGbp } = useCurrency();
-  const hotels = UMRAH_HOTELS.filter((h) => h.city === city)
-    .sort((a, b) => a.distanceM - b.distanceM)
-    .slice(0, 3);
+  const [allHotels,setHotels]=useState<import("@/lib/types/umrah").UmrahHotel[]>([]);
+  const [error,setError]=useState(false);
+  useEffect(()=>{let cancelled=false;umrahService.search().then(packages=>{if(!cancelled)setHotels([...new Map(packages.flatMap(p=>p.options?.hotels??[]).map(h=>[h.id,h])).values()]);}).catch(()=>{if(!cancelled)setError(true);});return ()=>{cancelled=true;};},[]);
+  const hotels = allHotels.filter(h=>h.city===city).sort((a,b)=>a.distanceM-b.distanceM).slice(0,3);
   return (
     <ul className="grid gap-5 md:grid-cols-3">
+      {hotels.length===0&&<li role="status">{error?"Hotels are unavailable. Please try again.":"Finding hotels…"}</li>}
       {hotels.map((h) => (
         <li key={h.id}>
           <Link href={`/hotels/${h.id}`} className="group block overflow-hidden rounded-xl border border-slate-200 bg-white transition-shadow hover:shadow-lift">

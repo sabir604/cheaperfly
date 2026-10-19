@@ -12,11 +12,12 @@ import { Button } from "@/components/ui/button";
 import { Accordion } from "@/components/ui/disclosure";
 import { Select } from "@/components/ui/form";
 import { Badge } from "@/components/ui/primitives";
-import { CATEGORY_LABEL, getUmrahFlight, getUmrahHotel, getUmrahTransfer } from "@/data/umrah";
+import { CATEGORY_LABEL } from "@/data/umrah";
 import { toCurrency } from "@/lib/engine/currency";
 import { addDaysISO, formatDayLong, formatDayShort } from "@/lib/engine/dates";
-import { umrahAdultPackagePrice } from "@/lib/engine/pricing";
-import { defaultUmrahConfig, resolveUmrahPricingInput } from "@/lib/engine/umrah";
+import { InlineNotice } from "@/components/ui/feedback";
+import type { UmrahConfiguration } from "@cheaperfly/api-contracts/umrah";
+import { defaultUmrahConfig, umrahService, loadUmrahQuote } from "@/lib/engine/umrah";
 import { useDraftsStore } from "@/lib/stores/drafts";
 import { useSessionStore } from "@/lib/stores/session";
 import type { UmrahConfig, UmrahPackage } from "@/lib/types/umrah";
@@ -48,13 +49,22 @@ export function UmrahDetail({ pkg, seed }: { pkg: UmrahPackage; seed?: Partial<U
   const { currency, fmt } = useCurrency();
   const startUmrah = useDraftsStore((s) => s.startUmrah);
   const profile = useSessionStore((s) => s.profile);
+  const user=useSessionStore(s=>s.user);
   const [config, setConfig] = useState<UmrahConfig>(() => defaultUmrahConfig(pkg, seed));
   const [section, setSection] = useState("overview");
-  const perAdult = umrahAdultPackagePrice(resolveUmrahPricingInput(pkg, config), currency);
+  const [pricing,setPricing]=useState<{key:string;data?:UmrahConfiguration;error?:string}|null>(null);
+  const [booking,setBooking]=useState(false);
+  const [bookError,setBookError]=useState<string|null>(null);
+  const requestKey=JSON.stringify([pkg.id,config,currency,user?.id]);
+  const current=pricing?.key===requestKey?pricing:null;
+  const perAdult=current?.data?.adultPrice;
+  useEffect(()=>{let cancelled=false;umrahService.configuration(pkg.id,config,currency).then(data=>{if(!cancelled)setPricing({key:requestKey,data});}).catch((error:Error)=>{if(!cancelled)setPricing({key:requestKey,error:error.message});});return ()=>{cancelled=true;};
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  },[requestKey]);
   const departure = pkg.departures.find((d) => d.date === config.departureDate)!;
   const paying = config.adults + config.children;
-  const makkah = getUmrahHotel(pkg.makkahHotelId)!;
-  const madinah = getUmrahHotel(pkg.madinahHotelId)!;
+  const makkah = pkg.options!.hotels.find(x=>x.id===pkg.makkahHotelId)!;
+  const madinah = pkg.options!.hotels.find(x=>x.id===pkg.madinahHotelId)!;
 
   useEffect(() => {
     const els = SECTIONS.map((s) => document.getElementById(`u-${s.id}`)).filter((e): e is HTMLElement => !!e);
@@ -69,15 +79,16 @@ export function UmrahDetail({ pkg, seed }: { pkg: UmrahPackage; seed?: Partial<U
     return () => observer.disconnect();
   }, []);
 
-  const book = () => {
-    startUmrah(pkg.id, config, profile ? { email: profile.email, countryCode: profile.countryCode, mobile: profile.mobile } : undefined);
-    router.push("/umrah/book/customize");
+  const book = async () => {
+    setBooking(true);setBookError(null);
+    try {const quote=await loadUmrahQuote(pkg.id,config,currency,user?.id??"guest");startUmrah(pkg.id,quote.config,profile?{email:profile.email,countryCode:profile.countryCode,mobile:profile.mobile}:undefined,quote);router.push("/umrah/book/customize");}catch(error){setBookError(error instanceof Error?error.message:"Could not quote this package.");}finally{setBooking(false);}
   };
 
   const bookCard = (
     <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-card">
+      {(current?.error||bookError)&&<InlineNotice tone="error">{current?.error||bookError}</InlineNotice>}
       <p className="text-xs font-semibold text-slate-500">From</p>
-      <p className="text-[34px] font-extrabold leading-none text-navy-900 tnum">{fmt(perAdult)}</p>
+      <p className="text-[34px] font-extrabold leading-none text-navy-900 tnum">{perAdult===undefined?"…":fmt(perAdult)}</p>
       <p className="text-xs text-slate-500">per adult · quad room · taxes &amp; fees at checkout</p>
       <div className="mt-4 space-y-3 border-t border-slate-100 pt-4">
         <div>
@@ -113,11 +124,11 @@ export function UmrahDetail({ pkg, seed }: { pkg: UmrahPackage; seed?: Partial<U
           </div>
         </div>
       </div>
-      <Button variant="umrah" size="lg" block className="mt-5" onClick={book}>
+      <Button variant="umrah" size="lg" block className="mt-5" onClick={book} disabled={!current?.data} loading={booking}>
         Customise &amp; book
       </Button>
       <p className="mt-2 text-center text-xs text-slate-500">
-        Estimated total for {paying} paying traveller{paying > 1 ? "s" : ""}: <b className="text-navy-900 tnum">{fmt(perAdult * config.adults + Math.round(0.75 * perAdult) * config.children)}</b>+
+        Estimated total for {paying} paying traveller{paying > 1 ? "s" : ""}: <b className="text-navy-900 tnum">{current?.data?fmt(current.data.breakdown.base):"…"}</b>+
       </p>
       <ul className="mt-4 space-y-1.5 text-xs text-slate-600">
         {["Umrah visa processing included", "Customise hotels, room, transfers & extras next", "24/7 in-country pilgrim support"].map((t) => (
@@ -233,7 +244,7 @@ export function UmrahDetail({ pkg, seed }: { pkg: UmrahPackage; seed?: Partial<U
                 </thead>
                 <tbody className="divide-y divide-slate-100">
                   {pkg.departures.map((d) => {
-                    const price = umrahAdultPackagePrice(resolveUmrahPricingInput(pkg, { ...config, departureDate: d.date }), currency);
+                    const price = current?.data?.departurePrices[d.date];
                     const selected = d.date === config.departureDate;
                     return (
                       <tr key={d.date} className={cn(selected && "bg-umrah-50/60")}>
@@ -247,7 +258,7 @@ export function UmrahDetail({ pkg, seed }: { pkg: UmrahPackage; seed?: Partial<U
                         </td>
                         <td className="px-4 py-3 text-slate-600">{formatDayShort(addDaysISO(d.date, pkg.nights))}</td>
                         <td className={cn("px-4 py-3 text-xs font-semibold", d.seatsLeft <= 8 ? "text-red-600" : "text-emerald-700")}>{d.seatsLeft} seats</td>
-                        <td className="px-4 py-3 text-right font-bold text-navy-900 tnum">{fmt(price)}</td>
+                        <td className="px-4 py-3 text-right font-bold text-navy-900 tnum">{price===undefined?"…":fmt(price)}</td>
                         <td className="px-4 py-3 text-right">
                           <Button size="sm" variant={selected ? "umrah" : "outline"} onClick={() => setConfig({ ...config, departureDate: d.date })} aria-pressed={selected}>
                             {selected ? "Selected" : "Select"}
@@ -322,7 +333,7 @@ export function UmrahDetail({ pkg, seed }: { pkg: UmrahPackage; seed?: Partial<U
             </h2>
             <ul className="space-y-3">
               {pkg.flightOptionIds.map((id) => {
-                const f = getUmrahFlight(id)!;
+                const f = pkg.options!.flights.find(x=>x.id===id)!;
                 const amount = fmt(toCurrency(f.priceDelta, currency));
                 return (
                   <li key={id} className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-200 bg-white p-4">
@@ -349,7 +360,7 @@ export function UmrahDetail({ pkg, seed }: { pkg: UmrahPackage; seed?: Partial<U
             </h2>
             <ul className="grid gap-3 sm:grid-cols-2">
               {pkg.transferOptionIds.map((id) => {
-                const t = getUmrahTransfer(id)!;
+                const t = pkg.options!.transfers.find(x=>x.id===id)!;
                 return (
                   <li key={id} className="rounded-xl border border-slate-200 bg-white p-4">
                     <p className="flex items-center gap-2 text-[15px] font-bold text-navy-900">

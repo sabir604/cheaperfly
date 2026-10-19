@@ -2,13 +2,12 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { FlaskConical, Receipt } from "lucide-react";
+import { Receipt } from "lucide-react";
 import { TimelineView } from "@/components/bookings/panels";
-import { Button, ButtonLink } from "@/components/ui/button";
+import { ButtonLink } from "@/components/ui/button";
 import { TabList } from "@/components/ui/disclosure";
 import { StateView } from "@/components/ui/feedback";
 import { Badge, type BadgeTone } from "@/components/ui/primitives";
-import { advanceRequest } from "@/lib/engine/bookings/requests";
 import { formatCurrency } from "@/lib/engine/currency";
 import { formatDateTimeMed } from "@/lib/engine/dates";
 import { useAccountStore } from "@/lib/stores/bookings";
@@ -27,7 +26,6 @@ const Term = ({ children }: { children: string }) => <dt className="text-xs font
 
 function RequestCard({ r }: { r: ServiceRequest }) {
   const status = STATUS[r.status];
-  const open = r.status !== "processed" && r.status !== "rejected";
   return (
     <li className="overflow-hidden rounded-xl border border-slate-200 bg-white">
       <div className="flex flex-wrap items-start justify-between gap-3 border-b border-slate-100 p-5">
@@ -80,19 +78,9 @@ function RequestCard({ r }: { r: ServiceRequest }) {
         </dl>
         <TimelineView events={r.timeline} />
       </div>
-      {open && (
-        <div className="flex flex-wrap items-center gap-3 border-t border-dashed border-slate-200 bg-slate-50 px-5 py-3 text-xs text-slate-500">
-          <span className="flex items-center gap-1.5 font-semibold">
-            <FlaskConical className="h-3.5 w-3.5" aria-hidden /> Demo: simulate the back office
-          </span>
-          <Button size="sm" variant="outline" onClick={() => advanceRequest(r.id, "next")}>
-            Advance to next status
-          </Button>
-          <Button size="sm" variant="ghost" onClick={() => advanceRequest(r.id, "reject")}>
-            Reject
-          </Button>
-        </div>
-      )}
+      <div className="flex flex-wrap items-center gap-3 border-t border-dashed border-slate-200 bg-slate-50 px-5 py-3 text-xs text-slate-500">
+        Decisions and simulated processing are performed by authorized staff. No real refund is issued.
+      </div>
     </li>
   );
 }

@@ -68,6 +68,7 @@ function ManagePanel({ booking, basePath }: { booking: Booking; basePath: string
           </ButtonLink>
           <Button
             variant="outline"
+            disabled={booking.providerMode === "simulated"}
             onClick={() => {
               useBookingsStore.getState().updateBooking(booking.id, (b) => ({
                 ...b,

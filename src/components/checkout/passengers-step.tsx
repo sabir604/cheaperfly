@@ -1,4 +1,5 @@
 "use client";
+import { saveTraveller } from "@/lib/engine/account";
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
@@ -27,7 +28,7 @@ function PassengersForm({ draft, breakdown }: { draft: FlightDraft; breakdown: P
   const user = useSessionStore((s) => s.user);
   const profile = useSessionStore((s) => s.profile);
   const travellers = useAccountStore((s) => s.travellers);
-  const upsertTraveller = useAccountStore((s) => s.upsertTraveller);
+
   const [saveFlags, setSaveFlags] = useState<Record<string, boolean>>({});
   const legs = draft.offer.legs;
   const firstDate = legs[0].departLocal.slice(0, 10);
@@ -60,7 +61,8 @@ function PassengersForm({ draft, breakdown }: { draft: FlightDraft; breakdown: P
       : null;
   const errorCount = Object.keys(form.formState.errors).length;
 
-  const onSubmit = form.handleSubmit((values) => {
+  const onSubmit = form.handleSubmit(async (values) => {
+    try {
     const passengers = values.passengers.map((p) => ({ ...p, savedTravellerId: p.savedTravellerId || undefined })) as FlightPassenger[];
     setPassengers(passengers);
     setContact(values.contact);
@@ -68,10 +70,10 @@ function PassengersForm({ draft, breakdown }: { draft: FlightDraft; breakdown: P
       let saved = 0;
       for (const p of passengers) {
         if (!saveFlags[p.id]) continue;
-        const match = travellers.find(
+        const match = useAccountStore.getState().travellers.find(
           (t) => t.id === p.savedTravellerId || (t.firstName.toLowerCase() === p.firstName.toLowerCase() && t.lastName.toLowerCase() === p.lastName.toLowerCase() && t.dob === p.dob),
         );
-        upsertTraveller({
+        await saveTraveller({
           id: match?.id,
           type: p.type,
           title: p.title,
@@ -92,6 +94,7 @@ function PassengersForm({ draft, breakdown }: { draft: FlightDraft; breakdown: P
       if (saved) toast.success(`${saved} traveller${saved > 1 ? "s" : ""} saved to your account`);
     }
     router.push("/flights/book/extras");
+    } catch(error) { toast.error(error instanceof Error ? error.message : "Could not save travellers. Please try again."); }
   });
 
   const summary = <FlightTripSummary offer={draft.offer} pax={draft.criteria.pax} />;

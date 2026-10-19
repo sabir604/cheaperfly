@@ -14,10 +14,12 @@ function billedTo(b: Booking) {
 
 function Invoice({ b }: { b: Booking }) {
   const profile = useSessionStore((s) => s.profile);
+  const user = useSessionStore((s) => s.user);
   const money = (n: number) => formatCurrency(n, b.currency, { decimals: 2 });
   // The account's billing address, when the invoice belongs to the signed-in customer.
-  const address = profile && profile.email.toLowerCase() === b.customerEmail.toLowerCase() && profile.address.line1 ? profile.address : null;
-  const paid = b.payment.status === "captured";
+  const address = profile && user && b.userId === user.id && profile.address.line1 ? profile.address : null;
+  const paid = b.payment.status === "captured" || b.payment.status === "partially_refunded";
+  const cancelledUnpaid=b.status === "cancelled" && b.payment.status === "pending";
   const refunded = b.payment.status === "refunded";
   const category = (kind: string) =>
     kind === "fee" ? "Service fee" : kind === "taxes" ? "Taxes" : kind === "base" ? (b.product === "flight" ? "Base fare" : b.product === "hotel" ? "Accommodation" : "Package") : kind;
@@ -58,7 +60,7 @@ function Invoice({ b }: { b: Booking }) {
           <p className="mt-1 text-sm font-semibold text-navy-900">{paymentMethodLabel(b.payment)}</p>
           <p className="text-sm text-slate-600">Transaction {b.payment.transactionId}</p>
           <p className="mt-1 inline-block rounded bg-slate-100 px-2 py-0.5 text-xs font-bold uppercase tracking-wide text-slate-700">
-            {refunded ? "Refunded" : paid ? "Paid" : "Payable at property"}
+            {cancelledUnpaid ? "Cancelled — nothing due" : refunded ? "Refunded" : b.payment.status === "partially_refunded" ? "Partially refunded" : paid ? "Paid" : "Payable at property"}
           </p>
         </div>
       </div>
@@ -88,10 +90,11 @@ function Invoice({ b }: { b: Booking }) {
         <tfoot>
           <tr className="text-[15px] font-extrabold text-navy-900">
             <td colSpan={2} className="border-t-2 border-navy-900 px-2 pt-3 text-right">
-              Total {refunded ? "(refunded)" : paid ? "paid" : "due"}
+              Total {refunded ? "(refunded)" : paid ? "paid before refunds" : "due"}
             </td>
-            <td className="border-t-2 border-navy-900 px-2 pt-3 text-right tnum">{money(b.pricing.total)}</td>
+            <td className="border-t-2 border-navy-900 px-2 pt-3 text-right tnum">{money(cancelledUnpaid ? 0 : b.pricing.total)}</td>
           </tr>
+        {(b.refundedAmount??0)>0&&<tr className="text-[15px] font-extrabold text-navy-900"><td colSpan={2} className="px-2 pt-3 text-right">Simulated refund / net retained</td><td className="px-2 pt-3 text-right tnum">−{money(b.refundedAmount!)} / {money(b.pricing.total-b.refundedAmount!)}</td></tr>}
         </tfoot>
       </table>
       <div className="mt-8 grid gap-4 border-t border-slate-200 pt-5 text-xs leading-relaxed text-slate-500 sm:grid-cols-2">
@@ -103,5 +106,5 @@ function Invoice({ b }: { b: Booking }) {
 }
 
 export function InvoiceDocument({ reference }: { reference: string }) {
-  return <DocumentShell reference={reference}>{(b) => <Invoice b={b} />}</DocumentShell>;
+  return <DocumentShell reference={reference} documentKind="invoice">{(b) => <Invoice b={b} />}</DocumentShell>;
 }

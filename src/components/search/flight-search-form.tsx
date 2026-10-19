@@ -5,11 +5,13 @@ import { useRouter } from "next/navigation";
 import { ArrowLeftRight, MapPin, Plane, Plus, Search, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { AIRPORT_GROUPS, CABIN_LABEL } from "@/data/flights";
-import { airportCityOf, getAirport, searchAirports } from "@/lib/engine/airports";
+import { airportCityOf, getAirport } from "@/lib/engine/airports";
 import { defaultFlightDates, flightSearchHref, validateFlightCriteria, type FlightFormErrors } from "@/lib/engine/criteria";
 import { addDaysISO, formatDateMed } from "@/lib/engine/dates";
 import { useUiStore } from "@/lib/stores/session";
 import type { AirportSuggestion, Cabin, FlightCriteria, Pax, SearchLeg, TripType } from "@/lib/types/flights";
+import { flightService } from "@/lib/engine/flights/service";
+import type { AirportSuggestionGroup } from "@/lib/types/flights";
 import { cn } from "@/lib/utils";
 import { DateField, DualDateField } from "./date-field";
 import { CabinPicker, PassengerPicker } from "./pickers";
@@ -50,7 +52,16 @@ function AirportCombobox({
   const inputRef = useRef<HTMLInputElement>(null);
   const listId = `${id}-listbox`;
   const shown = describeCode(value);
-  const groups = useMemo(() => searchAirports(typing ? query : "", 7), [query, typing]);
+  const [suggestions,setSuggestions]=useState<{query:string;groups:AirportSuggestionGroup[]}|null>(null);
+  const [lookupError,setLookupError]=useState(false);
+  const lookupQuery=typing?query:"";
+  const groups=useMemo(()=>suggestions?.query===lookupQuery?suggestions.groups:[],[suggestions,lookupQuery]);
+  useEffect(()=>{
+    if(!open)return;
+    let cancelled=false;
+    const timer=setTimeout(()=>flightService.suggestAirports(lookupQuery).then(groups=>{if(!cancelled){setSuggestions({query:lookupQuery,groups});setLookupError(false);}}).catch(()=>{if(!cancelled){setSuggestions({query:lookupQuery,groups:[]});setLookupError(true);}}),180);
+    return ()=>{cancelled=true;clearTimeout(timer);};
+  },[open,lookupQuery]);
   const flat = useMemo(() => groups.flatMap((g) => g.items), [groups]);
 
   const close = () => {
@@ -151,7 +162,7 @@ function AirportCombobox({
           {!typing && <p className="px-4 pb-1 pt-2 text-[11px] font-bold uppercase tracking-wider text-slate-400">Popular airports</p>}
           {groups.length === 0 && (
             <div className="px-4 py-6 text-center text-sm text-slate-500">
-              No airports match “{query}”.
+              {lookupError ? "Airport lookup is unavailable. Please try again." : suggestions?.query!==lookupQuery ? "Finding airports…" : `No airports match “${query}”.`}
               <br />
               Try a city, airport name or 3-letter code.
             </div>

@@ -98,8 +98,8 @@ function AccountMenu() {
           <PopoverClose asChild>
             <button
               type="button"
-              onClick={() => {
-                signOut();
+              onClick={async () => {
+                if (!(await signOut())) return toast.error("Could not sign out. Please try again.");
                 toast.info("You've been signed out");
                 router.push("/");
               }}
@@ -208,8 +208,8 @@ export function Header() {
               <Button
                 variant="outline"
                 block
-                onClick={() => {
-                  signOut();
+                onClick={async () => {
+                  if (!(await signOut())) return toast.error("Could not sign out. Please try again.");
                   setMenuOpen(false);
                   router.push("/");
                 }}

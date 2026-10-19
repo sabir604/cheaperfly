@@ -184,7 +184,7 @@ export function UmrahBookingSummary({ booking: b }: { booking: UmrahBooking }) {
         </div>
       </Panel>
       <Panel title="Visa progress" icon={<MapPinned className="h-5 w-5" />} id="visa-h">
-        <ol className="grid gap-4 sm:grid-cols-4">
+        {b.providerMode==="simulated"?<p className="mt-5 rounded-lg bg-amber-50 px-4 py-3 text-[13px] text-amber-900">Visa not submitted. This booking is simulated; no visa application or email was sent.</p>:<ol className="grid gap-4 sm:grid-cols-4">
           {VISA_STEPS.map((s, i) => {
             const done = i <= current;
             return (
@@ -202,8 +202,8 @@ export function UmrahBookingSummary({ booking: b }: { booking: UmrahBooking }) {
               </li>
             );
           })}
-        </ol>
-        {b.visaStatus === "documents_requested" && (
+        </ol>}
+        {b.providerMode!=="simulated"&&b.visaStatus === "documents_requested" && (
           <p className="mt-5 rounded-lg bg-amber-50 px-4 py-3 text-[13px] text-amber-900">
             <b>Action needed:</b> reply to your confirmation email with clear scans of each traveller’s passport bio page and a passport-style photo. Visa processing takes 3–5 working days.
           </p>

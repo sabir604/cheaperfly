@@ -38,7 +38,7 @@ export default async function ContactPage({ searchParams }: PageProps<"/help/con
             <p className="flex items-center gap-2 text-sm font-bold text-navy-900">
               <ShieldCheck className="h-4 w-4 text-emerald-600" aria-hidden /> Prototype notice
             </p>
-            <p className="mt-1 text-sm text-slate-600">Messages create a support case stored in this browser. Nothing is delivered to an external service in this demo.</p>
+            <p className="mt-1 text-sm text-slate-600">Messages create an inquiry saved securely for staff review. No email or external message is delivered in this simulation.</p>
           </div>
         </aside>
       </div>

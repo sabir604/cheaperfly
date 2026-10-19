@@ -12,10 +12,9 @@ import { StateView } from "@/components/ui/feedback";
 import { Checkbox, Select } from "@/components/ui/form";
 import { Drawer } from "@/components/ui/overlay";
 import { Badge, Skeleton } from "@/components/ui/primitives";
-import { CATEGORY_LABEL, MEAL_SHORT, UMRAH_DEPARTURE_CITIES, getUmrahFlight, getUmrahHotel, getUmrahTransfer } from "@/data/umrah";
+import { CATEGORY_LABEL, MEAL_SHORT, UMRAH_DEPARTURE_CITIES } from "@/data/umrah";
 import { serializeUmrahCriteria, type UmrahUrlCriteria } from "@/lib/engine/criteria";
 import { formatDateMed } from "@/lib/engine/dates";
-import { ServiceError } from "@/lib/engine/service";
 import { packageFromPrice, umrahService } from "@/lib/engine/umrah";
 import { useHydrated } from "@/lib/stores/hydration";
 import { useUiStore } from "@/lib/stores/session";
@@ -49,10 +48,10 @@ function FilterGroup({ title, children }: { title: string; children: ReactNode }
 
 function PackageCard({ pkg, price, criteria, city }: { pkg: UmrahPackage; price: number; criteria: UmrahUrlCriteria; city: string }) {
   const { fmt } = useCurrency();
-  const makkah = getUmrahHotel(pkg.makkahHotelId)!;
-  const madinah = getUmrahHotel(pkg.madinahHotelId)!;
-  const flight = getUmrahFlight(pkg.flightOptionIds[0])!;
-  const transfer = getUmrahTransfer(pkg.defaultTransferId)!;
+  const makkah = pkg.options!.hotels.find(x=>x.id===pkg.makkahHotelId)!;
+  const madinah = pkg.options!.hotels.find(x=>x.id===pkg.madinahHotelId)!;
+  const flight = pkg.options!.flights.find(x=>x.id===pkg.flightOptionIds[0])!;
+  const transfer = pkg.options!.transfers.find(x=>x.id===pkg.defaultTransferId)!;
   const next = pkg.departures.filter((d) => !criteria.month || criteria.month === "any" || d.date.startsWith(criteria.month))[0] ?? pkg.departures[0];
   const href = `/umrah/packages/${pkg.slug}?${serializeUmrahCriteria({ ...criteria, departureCity: city })}`;
   return (
@@ -149,11 +148,11 @@ export function UmrahResults({ criteria }: { criteria: UmrahUrlCriteria }) {
     let cancelled = false;
     const sc = useUiStore.getState().scenario;
     const resetScenario = () => sc !== "ok" && sc !== "price-changed" && setScenario("ok");
-    (sc === "error" ? Promise.reject(new ServiceError("supplier_timeout", "Our Umrah supplier didn't respond in time.")) : umrahService.search({ month: criteria.month, nights: criteria.nights }))
+    umrahService.search({ month: criteria.month, nights: criteria.nights }, {scenario:sc})
       .then((list) => {
         if (cancelled) return;
         resetScenario();
-        setOutcome({ status: "ready", list: sc === "empty" ? [] : list, request });
+        setOutcome({ status: "ready", list, request });
       })
       .catch((err: Error) => {
         if (cancelled) return;
@@ -178,7 +177,7 @@ export function UmrahResults({ criteria }: { criteria: UmrahUrlCriteria }) {
         .filter(({ p, price }) => {
           if (!p.departureCities.includes(filters.city)) return false;
           if (filters.durations.length && !filters.durations.includes(durationOf(p.nights))) return false;
-          const makkah = getUmrahHotel(p.makkahHotelId)!;
+          const makkah = p.options!.hotels.find(x=>x.id===p.makkahHotelId)!;
           if (filters.stars.length && !filters.stars.includes(makkah.stars)) return false;
           if (filters.distance !== null && makkah.distanceM > filters.distance) return false;
           if (filters.meals.length && !filters.meals.includes(p.meal)) return false;
@@ -190,7 +189,7 @@ export function UmrahResults({ criteria }: { criteria: UmrahUrlCriteria }) {
             : sort === "duration"
               ? a.p.nights - b.p.nights
               : sort === "distance"
-                ? getUmrahHotel(a.p.makkahHotelId)!.distanceM - getUmrahHotel(b.p.makkahHotelId)!.distanceM
+                ? a.p.options!.hotels.find(x=>x.id===a.p.makkahHotelId)!.distanceM - b.p.options!.hotels.find(x=>x.id===b.p.makkahHotelId)!.distanceM
                 : b.p.rating - a.p.rating,
         ),
     [priced, filters, sort],

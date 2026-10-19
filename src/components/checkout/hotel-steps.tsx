@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { FormProvider, useForm } from "react-hook-form";
@@ -12,10 +12,11 @@ import { Button, ButtonLink } from "@/components/ui/button";
 import { InlineNotice, StateView } from "@/components/ui/feedback";
 import { Skeleton } from "@/components/ui/primitives";
 import { Checkbox, Field, Input, Select, Textarea } from "@/components/ui/form";
-import { getHotel } from "@/data/hotels";
+import type { HotelQuote } from "@cheaperfly/api-contracts/hotels";
+import { hotelDetailHref } from "@/lib/engine/criteria";
 import { formatDateMed, formatDayLong } from "@/lib/engine/dates";
-import { MEAL_LABEL } from "@/lib/engine/hotels";
-import { calcHotelPricing, type PriceBreakdown } from "@/lib/engine/pricing";
+import { MEAL_LABEL, loadHotelQuote, hotelQuoteKey } from "@/lib/engine/hotels";
+import { type PriceBreakdown } from "@/lib/engine/pricing";
 import { useDraftsStore } from "@/lib/stores/drafts";
 import { useHydrated } from "@/lib/stores/hydration";
 import { useSessionStore } from "@/lib/stores/session";
@@ -33,8 +34,25 @@ export function useHotelDraft() {
   const draft = useDraftsStore((s) => s.hotel);
   const user = useSessionStore((s) => s.user);
   const { currency } = useCurrency();
-  const breakdown = useMemo(() => (draft ? calcHotelPricing(draft.quote, currency, !!user) : null), [draft, currency, user]);
-  return { hydrated, draft, breakdown, user };
+  const identity=user?.id??"guest";
+  const key=draft?.searchId?hotelQuoteKey(draft.searchId,draft.hotelId,draft.quote.roomId,draft.quote.ratePlanId,currency,identity):"";
+  const [result,setResult]=useState<{key:string;quote?:HotelQuote;error?:string}|null>(null);
+  const [attempt,setAttempt]=useState(0);
+  const [expired,setExpired]=useState<string|null>(null);
+  useEffect(()=>{
+    if(!hydrated||!draft?.searchId)return;
+    let cancelled=false;
+    loadHotelQuote(draft.searchId,draft.hotelId,draft.quote.roomId,draft.quote.ratePlanId,currency,identity).then(quote=>{if(!cancelled){setResult({key,quote});useDraftsStore.getState().patchHotel({serverQuote:quote,quote:quote.room,hotel:quote.hotel,criteria:quote.criteria});}}).catch((error:Error)=>{if(!cancelled)setResult({key,error:error.message});});
+    return ()=>{cancelled=true;};
+    // The key includes the stored search, selected room/rate, currency and current identity.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  },[hydrated,key,attempt]);
+  useEffect(()=>{if(!result?.quote)return;const timer=setTimeout(()=>setExpired(result.quote!.id),Math.max(0,Date.parse(result.quote.expiresAt)-Date.now()));return ()=>clearTimeout(timer);},[result]);
+  const current=result?.key===key?result:null;
+  const breakdown=current?.quote&&expired!==current.quote.id?current.quote.breakdown:null;
+  const quoteError=current?.error??(current?.quote&&expired===current.quote.id?"This room rate has expired. Please search again.":null);
+  return { hydrated, draft, breakdown, user, quoteError, retry:()=>setAttempt(n=>n+1) };
+
 }
 
 /** Loading placeholder for the hotel and Umrah booking steps. */
@@ -51,9 +69,11 @@ export function StepSkeleton() {
 }
 
 function HotelGuard({ children }: { children: (ctx: { draft: HotelDraft; breakdown: PriceBreakdown }) => ReactNode }) {
-  const { hydrated, draft, breakdown } = useHotelDraft();
+  const { hydrated, draft, breakdown, quoteError, retry } = useHotelDraft();
   if (!hydrated) return <StepSkeleton />;
-  if (!draft || !breakdown || !getHotel(draft.hotelId))
+  if(draft?.searchId&&quoteError)return <div className="container-page py-16"><StateView tone="warning" title="We couldn’t refresh your room rate" description={quoteError} actions={<><Button onClick={retry}>Try again</Button><ButtonLink href="/hotels">Search hotels</ButtonLink></>} /></div>;
+  if(draft?.searchId&&!breakdown)return <StepSkeleton />;
+  if (!draft || !breakdown || !draft.hotel || !draft.searchId)
     return (
       <div className="container-page py-16">
         <StateView
@@ -68,8 +88,7 @@ function HotelGuard({ children }: { children: (ctx: { draft: HotelDraft; breakdo
 }
 
 const hotelHref = (d: HotelDraft) => {
-  const c = d.criteria;
-  return `/hotels/${d.hotelId}?dest=${c.destination}&in=${c.checkIn}&out=${c.checkOut}&rooms=${c.occupancy.rooms}&adt=${c.occupancy.adults}&chd=${c.occupancy.children}`;
+  return hotelDetailHref(d.hotelId,d.criteria);
 };
 
 function Layout({ title, subtitle, draft, breakdown, children }: { title: string; subtitle: ReactNode; draft: HotelDraft; breakdown: PriceBreakdown; children: ReactNode }) {
@@ -124,7 +143,7 @@ function GuestForm({ draft, breakdown }: { draft: HotelDraft; breakdown: PriceBr
   const errors = form.formState.errors;
   // eslint-disable-next-line react-hooks/incompatible-library -- react-hook-form's watch() is intentionally reactive here
   const requests = form.watch("specialRequests");
-  const hotel = getHotel(draft.hotelId)!;
+  const hotel = draft.hotel!;
 
   const onSubmit = form.handleSubmit((v) => {
     patchHotel({ guests: v.guests, contact: v.contact, arrivalTime: v.arrivalTime, specialRequests: v.specialRequests, requestNotes: v.requestNotes ?? "" });
@@ -228,25 +247,35 @@ function Review({ draft, breakdown }: { draft: HotelDraft; breakdown: PriceBreak
   const patchHotel = useDraftsStore((s) => s.patchHotel);
   const setActive = useDraftsStore((s) => s.setActive);
   const [termsError, setTermsError] = useState(false);
-  const hotel = getHotel(draft.hotelId)!;
+  const [checking,setChecking]=useState(false);
+  const [quoteError,setQuoteError]=useState<string|null>(null);
+  const user=useSessionStore(s=>s.user);
+  const {currency}=useCurrency();
+  const hotel = draft.hotel!;
   const q = draft.quote;
   const incomplete = draft.guests.some((g) => !g.firstName || !g.lastName) || !draft.contact.email;
   const back = hotelHref(draft);
 
-  const proceed = () => {
+  const proceed = async () => {
     if (incomplete) return router.push("/hotels/book/guest");
     if (!draft.termsAccepted) {
       setTermsError(true);
       document.getElementById("terms")?.focus();
       return;
     }
-    setActive("hotel");
-    router.push("/checkout/payment");
+    if(!draft.searchId)return;
+    setChecking(true);setQuoteError(null);
+    try {
+      const quote=await loadHotelQuote(draft.searchId,draft.hotelId,q.roomId,q.ratePlanId,currency,user?.id??"guest");
+      patchHotel({serverQuote:quote,quote:quote.room,hotel:quote.hotel});setActive("hotel");router.push("/checkout/payment");
+    }catch(error){setQuoteError(error instanceof Error?error.message:"Could not refresh this room rate.");}finally{setChecking(false);}
+
   };
 
   return (
     <Layout title="Review your stay" subtitle="Check the details and cancellation terms, then continue to payment." draft={draft} breakdown={breakdown}>
       <div className="min-w-0 space-y-5">
+        {quoteError&&<InlineNotice tone="error">{quoteError}</InlineNotice>}
         <ReviewSection id="rs-stay" title="Your stay" editHref={back} editLabel="Change">
           <p className="text-[17px] font-bold text-navy-900">{hotel.name}</p>
           <p className="text-sm text-slate-600">{hotel.address}</p>
@@ -299,7 +328,7 @@ function Review({ draft, breakdown }: { draft: HotelDraft; breakdown: PriceBreak
           <Link href="/hotels/book/guest" className="text-center text-sm font-semibold text-slate-600 hover:text-brand-600">
             ← Back to guest details
           </Link>
-          <Button size="xl" onClick={proceed} rightIcon={<ArrowRight className="h-4 w-4" />}>
+          <Button size="xl" onClick={proceed} loading={checking} rightIcon={<ArrowRight className="h-4 w-4" />}>
             {q.payLater ? "Continue to guarantee" : "Continue to payment"}
           </Button>
         </div>

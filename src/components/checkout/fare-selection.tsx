@@ -132,6 +132,7 @@ function FareStep({ draft }: { draft: FlightDraft }) {
   const scenario = useUiStore((s) => s.scenario);
   const setScenario = useUiStore((s) => s.setScenario);
   const { breakdown } = useFlightDraft();
+  const [checkError,setCheckError]=useState<string|null>(null);
   const [checking, setChecking] = useState(false);
   const [expired, setExpired] = useState(false);
   const [priceChange, setPriceChange] = useState<{ fareId: string; newFare: number; newTax: number } | null>(null);
@@ -145,14 +146,17 @@ function FareStep({ draft }: { draft: FlightDraft }) {
 
   async function onContinue() {
     if (!selected) return;
+    setCheckError(null);
     setChecking(true);
-    const result = await flightService.revalidate(offer, selected.id, { scenario });
+    try {
+    const result = await flightService.revalidate(offer, selected.id, draft.searchId, { scenario });
     setChecking(false);
     // "expired" and "price-changed" are one-shot QA scenarios.
     if (scenario !== "ok" && scenario !== "empty" && scenario !== "error") setScenario("ok");
     if (result.status === "expired") setExpired(true);
     else if (result.status === "price_changed") setPriceChange({ fareId: selected.id, newFare: result.newFarePerAdult, newTax: result.newTaxPerAdult });
-    else router.push("/flights/book/passengers");
+    else { patchFlight({offer:result.offer}); router.push("/flights/book/passengers"); }
+    } catch (error) { setCheckError(error instanceof Error ? error.message : "Could not check this fare. Please try again."); } finally {setChecking(false);}
   }
 
   function acceptNewPrice() {
@@ -184,9 +188,12 @@ function FareStep({ draft }: { draft: FlightDraft }) {
     );
 
   const continueButton = (
+    <>
+    {checkError && <p role="alert">{checkError}</p>}
     <Button size="lg" block onClick={onContinue} disabled={!selected} loading={checking} rightIcon={<ArrowRight className="h-4 w-4" />}>
       {selected ? `Continue with ${selected.name}` : "Select a fare to continue"}
     </Button>
+    </>
   );
 
   return (

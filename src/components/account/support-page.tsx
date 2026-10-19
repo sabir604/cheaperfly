@@ -1,5 +1,6 @@
 "use client";
 
+import { replySupportCase } from "@/lib/engine/bookings/requests";
 import { useState } from "react";
 import { MessageSquare, Send } from "lucide-react";
 import { SupportContactOptions, SupportForm, openWhatsAppCase } from "@/components/support/support";
@@ -15,22 +16,18 @@ import type { SupportCase } from "@/lib/types/booking";
 import { cn } from "@/lib/utils";
 import { PageTitle } from "./account-shell";
 
-const AUTO_REPLY = "Automated acknowledgement (prototype): thanks — a specialist would pick this up in a live service.";
+
 
 function CaseThread({ c }: { c: SupportCase }) {
-  const updateCase = useAccountStore((s) => s.updateCase);
+  const [sending,setSending]=useState(false);
   const [reply, setReply] = useState("");
 
-  /** Adds the customer's reply, then a simulated agent acknowledgement a moment later. */
-  function send() {
-    const text = reply.trim();
-    if (text.length < 2) return;
-    updateCase(c.id, (x) => ({ ...x, status: "open", messages: [...x.messages, { from: "customer", text, at: new Date().toISOString() }] }));
-    setReply("");
-    setTimeout(() => {
-      updateCase(c.id, (x) => ({ ...x, messages: [...x.messages, { from: "agent", text: AUTO_REPLY, at: new Date().toISOString() }] }));
-    }, 1200);
-    toast.success("Reply added to your case");
+  async function send() {
+    const text=reply.trim();if(text.length<2||sending)return;
+    setSending(true);
+    try{await replySupportCase(c.id,text);setReply('');toast.success('Reply saved to your case');}
+    catch{toast.error('Could not save your reply. Please try again.');}
+    finally{setSending(false);}
   }
 
   return (
@@ -64,7 +61,7 @@ function CaseThread({ c }: { c: SupportCase }) {
               Reply to case {c.id}
             </label>
             <Textarea id={`rep-${c.id}`} rows={2} value={reply} onChange={(e) => setReply(e.target.value)} placeholder="Write a reply…" className="min-h-0" />
-            <Button onClick={send} disabled={reply.trim().length < 2} leftIcon={<Send className="h-4 w-4" />} className="self-end">
+            <Button onClick={send} disabled={sending || reply.trim().length < 2} leftIcon={<Send className="h-4 w-4" />} className="self-end">
               Send
             </Button>
           </div>

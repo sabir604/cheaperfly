@@ -1,3 +1,4 @@
+import { isCalendarDate, validHotelCriteria } from "@cheaperfly/api-contracts/hotels";
 /** Search defaults, URL (de)serialisation and flight-form validation. URLs match the original site. */
 import { AIRPORT_GROUPS } from "@/data/flights";
 import { getDestination } from "@/data/hotels";
@@ -97,6 +98,7 @@ export function validateFlightCriteria(c: FlightCriteria, formLegs?: SearchLeg[]
     else if (!isKnownCode(leg.to)) e.to = "Choose an airport from the list";
     if (leg?.from && leg?.to && leg.from.replace("*", "") === leg.to.replace("*", "")) e.to = "Origin and destination can't be the same";
     if (!leg?.date) e.date = "Choose a departure date";
+    else if (!/^\d{4}-\d{2}-\d{2}$/.test(leg.date) || !Number.isFinite(Date.parse(leg.date)) || new Date(leg.date).toISOString().slice(0,10)!==leg.date) e.date = "Choose a valid calendar date";
     else if (leg.date < today) e.date = "Departure date is in the past";
     else if (i > 0 && legs[i - 1]?.date && leg.date < legs[i - 1].date) e.date = "Must be on or after the previous flight";
     if (Object.keys(e).length) invalid = true;
@@ -107,11 +109,14 @@ export function validateFlightCriteria(c: FlightCriteria, formLegs?: SearchLeg[]
     if (!ret) {
       errors.ret = "Choose a return date";
       invalid = true;
+    } else if (!/^\d{4}-\d{2}-\d{2}$/.test(ret) || !Number.isFinite(Date.parse(ret)) || new Date(ret).toISOString().slice(0,10)!==ret) {
+      errors.ret = "Choose a valid calendar date"; invalid = true;
     } else if (ret < c.legs[0].date) {
       errors.ret = "Return can't be before departure";
       invalid = true;
     }
   }
+  if (Object.values(c.pax).some(n=>!Number.isInteger(n)||n<0)||c.pax.adults<1) {errors.pax="Choose valid passenger counts";invalid=true;}
   if (c.pax.infants > c.pax.adults) {
     errors.pax = "Each infant must travel with an adult";
     invalid = true;
@@ -149,7 +154,7 @@ export function parseFlightCriteria(params: Params): FlightCriteria | null {
   if (Object.values(pax).some(Number.isNaN) || pax.adults < 1) return null;
   const cabin = (get("cabin") || "economy") as Cabin;
   if (!CABINS.includes(cabin)) return null;
-  const isDate = (d: string) => /^\d{4}-\d{2}-\d{2}$/.test(d);
+  const isDate = isCalendarDate;
 
   let legs: SearchLeg[];
   if (trip === "multicity") {
@@ -187,8 +192,9 @@ export function parseHotelCriteria(params: Params, fallbackDestination?: string)
   if (!getDestination(destination)) return null;
   const defaults = defaultHotelDates();
   const checkIn = get("in") || defaults.checkIn;
+  if (!isCalendarDate(checkIn)) return null;
   const checkOut = get("out") || (get("in") ? addDaysISO(checkIn, 4) : defaults.checkOut);
-  const isDate = (d: string) => /^\d{4}-\d{2}-\d{2}$/.test(d);
+  const isDate = isCalendarDate;
   if (!isDate(checkIn) || !isDate(checkOut) || checkIn < todayISO() || checkOut <= checkIn) return null;
   const count = (k: string, fallback: number, min: number, max: number) => {
     const raw = get(k);
@@ -200,13 +206,16 @@ export function parseHotelCriteria(params: Params, fallbackDestination?: string)
   const adults = count("adt", 2, 1, 16);
   const children = count("chd", 0, 0, 8);
   if ([rooms, adults, children].some(Number.isNaN) || adults < rooms) return null;
-  const ages = get("ages")
+  const agesRaw = get("ages");
+  const ages = agesRaw
     .split(",")
     .filter(Boolean)
     .map(Number)
     .filter((n) => Number.isInteger(n) && n >= 0 && n <= 17);
+  if (agesRaw && (ages.length!==children || agesRaw.split(",").some(v=>v.trim()==="" || !Number.isInteger(Number(v)) || Number(v)<0 || Number(v)>17))) return null;
   const childAges = Array.from({ length: children }, (_, i) => ages[i] ?? 8);
-  return { destination, checkIn, checkOut, occupancy: { rooms, adults, children, childAges } };
+  const criteria = { destination, checkIn, checkOut, occupancy: { rooms, adults, children, childAges } };
+  return validHotelCriteria(criteria) ? criteria : null;
 }
 
 export interface UmrahUrlCriteria {

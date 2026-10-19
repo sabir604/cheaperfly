@@ -3,23 +3,19 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Check, Loader2, Lock } from "lucide-react";
-import { createFlightBooking, createHotelBooking, createUmrahBooking } from "@/lib/engine/bookings/service";
-import { paymentService } from "@/lib/engine/payment";
-import { calcFlightPricing, calcHotelPricing, calcUmrahPricing } from "@/lib/engine/pricing";
-import type { ServiceError } from "@/lib/engine/service";
-import { getUmrahPackage, resolveUmrahPricingInput } from "@/lib/engine/umrah";
-import { useBookingsStore } from "@/lib/stores/bookings";
-import { useCheckoutStore, useDraftsStore } from "@/lib/stores/drafts";
+import { checkoutService,checkoutFailureMessages } from "@/lib/engine/checkout";
+import { useCheckoutStore,useDraftsStore } from "@/lib/stores/drafts";
 import { useHydrated } from "@/lib/stores/hydration";
-import { useSessionStore, useUiStore } from "@/lib/stores/session";
+import { Button } from "@/components/ui/button";
+import { InlineNotice } from "@/components/ui/feedback";
 import { cn } from "@/lib/utils";
 
 type Product = "flight" | "hotel" | "umrah";
 
 const STEPS: Record<Product, string[]> = {
-  flight: ["Authorising payment", "Securing your fare with the airline", "Confirming booking & issuing e-tickets"],
-  hotel: ["Authorising payment", "Securing your room", "Confirming booking with the hotel"],
-  umrah: ["Authorising payment", "Securing hotels, flights & transfers", "Confirming your Umrah package"],
+  flight: ["Processing simulated payment", "Saving your booking", "Recording your simulated confirmation"],
+  hotel: ["Processing simulated payment", "Saving your room selection", "Recording your simulated confirmation"],
+  umrah: ["Processing simulated payment", "Saving hotels, flights & transfers", "Recording your simulated confirmation"],
 };
 
 /**
@@ -32,72 +28,44 @@ export function ProcessingPage() {
   const [stage, setStage] = useState(0);
   const [product, setProduct] = useState<Product>("flight");
   const started = useRef(false);
+  const [attempt,setAttempt]=useState(0);
+  const [error,setError]=useState<string|null>(null);
 
   useEffect(() => {
     if (!hydrated || started.current) return;
     const checkout = useCheckoutStore.getState();
-    const drafts = useDraftsStore.getState();
     const pending = checkout.pending;
     if (!pending) {
       router.replace(checkout.lastRef ? `/checkout/confirmation/${checkout.lastRef}` : "/");
       return;
     }
-    const p = pending.product;
-    const { flight, hotel, umrah } = drafts;
-    if (!((p === "flight" && flight) || (p === "hotel" && hotel) || (p === "umrah" && umrah))) {
-      router.replace(checkout.lastRef ? `/checkout/confirmation/${checkout.lastRef}` : "/checkout/payment");
-      return;
-    }
-    started.current = true;
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- one-off read of the hand-off from the store
+    const p=pending.product;
+    if(!pending.request){checkout.setPending(null);router.replace('/checkout/payment');return;}
+    started.current=true;
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- processing begins once per persisted attempt
     setProduct(p);
-    const currency = useUiStore.getState().currency;
-    const user = useSessionStore.getState().user;
-    const member = !!user;
-    let amount = 0;
-    if (p === "flight" && flight) amount = calcFlightPricing({ offer: flight.offer, fareId: flight.fareId, extras: flight.extras, pax: flight.criteria.pax }, currency, member).total;
-    if (p === "hotel" && hotel) amount = calcHotelPricing(hotel.quote, currency, member).total;
-    if (p === "umrah" && umrah) amount = calcUmrahPricing(resolveUmrahPricingInput(getUmrahPackage(umrah.packageId)!, umrah.config), currency, member).total;
+    const process=async()=>{
+      let result;
+      try {result=await checkoutService.status(pending.request.idempotencyKey);}
+      catch(error){if(!(error instanceof Error)||!('status' in error)||error.status!==404)throw error;result=await checkoutService.create(pending.request);}
+      if(result.state==='pending')result=await checkoutService.resume(result.id);
+      if(result.state==='declined'){
+        const c=useCheckoutStore.getState();const code=result.failureCode!;c.setFailure({code,message:checkoutFailureMessages[code]});c.setPending(null);router.replace('/checkout/payment');return;
+      }
+      if(result.state!=='confirmed'||!result.booking)throw new Error('The checkout is still pending. Please try again.');
+      const d=useDraftsStore.getState();if(p==='flight'&&d.flight?.quote?.id===pending.request.quoteId)d.clearFlight();if(p==='hotel'&&d.hotel?.serverQuote?.id===pending.request.quoteId)d.clearHotel();if(p==='umrah'&&d.umrah?.serverQuote?.id===pending.request.quoteId)d.clearUmrah();
+      const c=useCheckoutStore.getState();c.setLastRef(result.booking.id);c.setPending(null);c.setFailure(null);setStage(3);router.replace('/checkout/confirmation/'+result.booking.id);
+    };
+    process().catch((error:Error)=>{setError(error.message||'We could not check your payment. Retry to recover the same checkout.');started.current=false;});
 
-    paymentService
-      .charge({
-        method: pending.method,
-        amount,
-        currency,
-        brand: pending.brand,
-        last4: pending.last4,
-        cardholder: pending.cardholder,
-        outcome: pending.outcome,
-        onStage: setStage,
-      })
-      .then((payment) => {
-        const opts = { currency, member, userId: user?.id, payment };
-        const booking = p === "flight" && flight ? createFlightBooking(flight, opts) : p === "hotel" && hotel ? createHotelBooking(hotel, opts) : createUmrahBooking(umrah!, opts);
-        useBookingsStore.getState().grantGuestAccess(booking.id);
-        const d = useDraftsStore.getState();
-        if (p === "flight") d.clearFlight();
-        if (p === "hotel") d.clearHotel();
-        if (p === "umrah") d.clearUmrah();
-        const c = useCheckoutStore.getState();
-        c.setLastRef(booking.id);
-        c.setPending(null);
-        c.setFailure(null);
-        setStage(3);
-        setTimeout(() => router.replace(`/checkout/confirmation/${booking.id}`), 700);
-      })
-      .catch((err: ServiceError) => {
-        const c = useCheckoutStore.getState();
-        c.setFailure({ code: err.code ?? "payment_failed", message: err.message || "We couldn't take your payment." });
-        c.setPending(null);
-        router.replace("/checkout/payment");
-      });
-  }, [hydrated, router]);
+  }, [hydrated, router, attempt]);
 
   const steps = STEPS[product];
   const done = stage >= 3;
   return (
     <div className="container-page flex min-h-[70vh] items-center justify-center py-12">
       <div className="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-8 text-center shadow-card sm:p-10" role="status" aria-live="polite">
+        {error&&<InlineNotice tone="error">{error}<Button onClick={()=>{setError(null);setAttempt(n=>n+1);}}>Try again</Button></InlineNotice>}
         <div className="relative mx-auto mb-6 flex h-20 w-20 items-center justify-center">
           <span className="absolute inset-0 rounded-full border-4 border-brand-100" />
           <Loader2 className={cn("h-20 w-20 text-brand-500", done ? "hidden" : "animate-spin")} strokeWidth={1.5} aria-hidden />

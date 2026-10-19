@@ -23,7 +23,8 @@ import { submitChangeRequest, updateBookingContact, updateFlightExtras, updateHo
 import { formatCurrency, toCurrency } from "@/lib/engine/currency";
 import { addDaysISO, todayISO } from "@/lib/engine/dates";
 import type { Seat, SeatMap } from "@/lib/engine/flights/seatmap";
-import { flightService } from "@/lib/engine/flights/service";
+// Selections become persisted staff-reviewed requests.
+import { buildSeatMap } from "@/lib/engine/flights/seatmap";
 import { calcFlightPricing, type FlightExtras } from "@/lib/engine/pricing";
 import type { Booking, FlightBooking, HotelBooking, UmrahBooking } from "@/lib/types/booking";
 import { cn } from "@/lib/utils";
@@ -44,9 +45,9 @@ function ContactTab({ booking }: { booking: Booking }) {
       <form
         onSubmit={form.handleSubmit(async (values) => {
           await new Promise((r) => setTimeout(r, 400));
-          updateBookingContact(booking.id, values);
+          try {await updateBookingContact(booking.id, values);
           form.reset(values);
-          toast.success("Contact details updated");
+          toast.success("Contact details updated");}catch{toast.error("Could not update contact details. Please try again.");}
         })}
         noValidate
         className="grid gap-4 sm:grid-cols-6"
@@ -117,9 +118,9 @@ function MealsTab({ booking }: { booking: FlightBooking }) {
       </div>
       <Button
         disabled={!changed}
-        onClick={() => {
-          updateFlightExtras(booking.id, { ...booking.extras, meals }, "Meal preferences changed");
-          toast.success("Meal preferences saved. Special meals are free of charge.");
+        onClick={async () => {
+          try {await updateFlightExtras(booking.id, { ...booking.extras, meals }, "Meal preferences changed");
+          toast.success("Meal request saved for staff review.");}catch{toast.error("Could not save the meal request.");}
         }}
       >
         Save meal changes
@@ -160,7 +161,7 @@ function ConfirmDialog({
   );
 }
 
-const chargeLine = (delta: number, b: Booking) => `Charge ${money(delta, b)} to ${b.payment.brand ?? "card"} ending ${b.payment.last4}.`;
+const chargeLine = (delta: number, b: Booking) => `Estimated simulated price difference: ${money(delta, b)}. Staff approval is required; no real card will be charged.`;
 
 function BaggageTab({ booking }: { booking: FlightBooking }) {
   const [baggage, setBaggage] = useState(booking.extras.baggage);
@@ -236,13 +237,14 @@ function BaggageTab({ booking }: { booking: FlightBooking }) {
         open={confirming}
         onOpenChange={setConfirming}
         title="Confirm baggage update"
-        description={delta > 0 ? "The difference will be charged to the card used for this booking." : "Your baggage selection will be updated."}
+        description={delta > 0 ? "Staff will review the simulated price difference. No real card will be charged." : "Your baggage selection will be updated."}
         body={delta > 0 ? chargeLine(delta, booking) : "No payment is needed."}
-        confirmLabel={delta > 0 ? "Confirm & pay" : "Confirm"}
-        onConfirm={() => {
-          updateFlightExtras(booking.id, extras, "Extra baggage updated");
+        confirmLabel={delta > 0 ? "Request update" : "Confirm"}
+        onConfirm={async () => {
+          try {
+          await updateFlightExtras(booking.id, extras, "Extra baggage updated");
           setConfirming(false);
-          toast.success(delta > 0 ? `${money(delta, booking)} charged. Baggage added.` : "Baggage updated");
+          toast.success("Baggage request saved for staff review. No real charge.");}catch{toast.error("Could not save the baggage request.");}
         }}
       />
     </Panel>
@@ -263,7 +265,7 @@ function SeatsTab({ booking }: { booking: FlightBooking }) {
   useEffect(() => {
     if (maps[segment.id]) return;
     let cancelled = false;
-    flightService.getSeatMap(segment, booking.fare).then((m) => {
+    Promise.resolve(buildSeatMap(segment, booking.fare)).then((m) => {
       if (!cancelled) setMaps((all) => ({ ...all, [segment.id]: m }));
     });
     return () => {
@@ -350,10 +352,11 @@ function SeatsTab({ booking }: { booking: FlightBooking }) {
         title="Confirm seat changes"
         body={delta > 0 ? chargeLine(delta, booking) : "No payment is needed."}
         confirmLabel="Confirm"
-        onConfirm={() => {
-          updateFlightExtras(booking.id, extras, "Seats updated");
+        onConfirm={async () => {
+          try {
+          await updateFlightExtras(booking.id, extras, "Seats updated");
           setConfirming(false);
-          toast.success("Seats updated");
+          toast.success("Seat request saved for staff review. No real charge.");}catch{toast.error("Could not save the seat request.");}
         }}
       />
     </Panel>
@@ -393,9 +396,9 @@ function StayTab({ booking }: { booking: HotelBooking }) {
       </div>
       <Button
         className="mt-4"
-        onClick={() => {
-          updateHotelPreferences(booking.id, { specialRequests: requests, requestNotes: notes, arrivalTime: arrival });
-          toast.success("Preferences sent to the hotel. Requests aren't guaranteed.");
+        onClick={async () => {
+          try {await updateHotelPreferences(booking.id, { specialRequests: requests, requestNotes: notes, arrivalTime: arrival });
+          toast.success("Stay preferences saved. No live hotel message was sent.");}catch{toast.error("Could not save stay preferences.");}
         }}
       >
         Save preferences
@@ -406,7 +409,7 @@ function StayTab({ booking }: { booking: HotelBooking }) {
 
 function VisaDocsTab({ booking }: { booking: UmrahBooking }) {
   const [notes, setNotes] = useState(booking.notes);
-  const [received, setReceived] = useState(booking.visaStatus !== "documents_requested");
+  const [received, setReceived] = useState(booking.simulatedDocumentsReceived ?? booking.visaStatus !== "documents_requested");
   return (
     <Panel title="Visa documents & notes" id="mg-docs" icon={<FileUp className="h-5 w-5" />}>
       <p className="mb-4 text-sm text-slate-600">
@@ -440,9 +443,9 @@ function VisaDocsTab({ booking }: { booking: UmrahBooking }) {
       </Field>
       <Button
         className="mt-4"
-        onClick={() => {
-          updateUmrahNotes(booking.id, notes, received);
-          toast.success(received ? "Documents received — visa applications submitted" : "Notes saved");
+        onClick={async () => {
+          try {await updateUmrahNotes(booking.id, notes, received);
+          toast.success("Notes saved. No visa application was submitted.");}catch{toast.error("Could not save these notes.");}
         }}
       >
         Save
@@ -496,7 +499,7 @@ function ChangeRequestTab({ booking, basePath }: { booking: Booking; basePath: s
       <form
         onSubmit={form.handleSubmit(async (values) => {
           await new Promise((r) => setTimeout(r, 500));
-          setCaseRef(submitChangeRequest(booking, values).id);
+          try {setCaseRef((await submitChangeRequest(booking, values)).id);}catch{toast.error("Could not save the change request. Please try again.");}
         })}
         noValidate
         className="grid gap-4 sm:grid-cols-2"

@@ -1,4 +1,5 @@
 "use client";
+import type { HotelSearch } from "@cheaperfly/api-contracts/hotels";
 
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import Link from "next/link";
@@ -25,7 +26,6 @@ import {
   type HotelCriteria,
   type HotelFilters,
   type HotelRow,
-  type HotelSearchResult,
   type HotelSort,
   type MealPlan,
 } from "@/lib/engine/hotels";
@@ -293,7 +293,7 @@ function ResultsSkeleton() {
   );
 }
 
-type Outcome = { status: "ready"; data: HotelSearchResult } | { status: "error"; message: string };
+type Outcome = { status: "ready"; data: HotelSearch } | { status: "error"; message: string };
 
 /** `/hotels/search`: filters, sort, list or map view. Mount with a `key` per search so filters reset. */
 export function HotelResults({ criteria }: { criteria: HotelCriteria }) {
@@ -342,7 +342,7 @@ export function HotelResults({ criteria }: { criteria: HotelCriteria }) {
     const prices = data?.items.map((i) => i.bestQuote.perNight) ?? [0];
     return [Math.min(...prices), Math.max(...prices)];
   }, [data]);
-  const rows = useMemo(() => (data ? sortHotelRows(applyHotelFilters(hotels, criteria, filters), sort, rankedIds) : []), [data, hotels, criteria, filters, sort, rankedIds]);
+  const rows = useMemo(() => (data ? sortHotelRows(applyHotelFilters(hotels, criteria, filters, Object.fromEntries(data.items.map(i=>[i.hotel.id,i.quotes]))), sort, rankedIds) : []), [data, hotels, criteria, filters, sort, rankedIds]);
   const nights = nightsBetween(criteria.checkIn, criteria.checkOut);
   const guests = criteria.occupancy.adults + criteria.occupancy.children;
   const filtersPanel = <FiltersPanel filters={filters} onChange={setFilters} hotels={hotels} priceRange={priceRange} shown={rows.length} total={hotels.length} />;

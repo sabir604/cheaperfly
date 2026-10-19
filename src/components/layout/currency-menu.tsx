@@ -5,12 +5,13 @@ import { Popover, PopoverClose, PopoverContent, PopoverTrigger } from "@/compone
 import { toast } from "@/components/ui/toast";
 import { CURRENCIES } from "@/lib/engine/currency";
 import { useSessionStore, useUiStore } from "@/lib/stores/session";
+import { savePreferences } from "@/lib/engine/account";
 import { cn } from "@/lib/utils";
 
 export function CurrencyMenu({ className, variant = "header" }: { className?: string; variant?: "header" | "footer" }) {
   const currency = useUiStore((s) => s.currency);
   const setCurrency = useUiStore((s) => s.setCurrency);
-  const updatePreferences = useSessionStore((s) => s.updatePreferences);
+  const user = useSessionStore((s) => s.user);
   const current = CURRENCIES.find((c) => c.code === currency)!;
   return (
     <Popover>
@@ -37,10 +38,11 @@ export function CurrencyMenu({ className, variant = "header" }: { className?: st
           <PopoverClose asChild key={c.code}>
             <button
               type="button"
-              onClick={() => {
-                setCurrency(c.code);
-                updatePreferences({ currency: c.code });
-                toast.info(`Prices now shown in ${c.code}`);
+              onClick={async () => {
+                try {
+                  if (user) await savePreferences({ currency:c.code }); else setCurrency(c.code);
+                  toast.info(`Prices now shown in ${c.code}`);
+                } catch(error) { toast.error(error instanceof Error ? error.message : "Please try again."); }
               }}
               className={cn("flex w-full items-center gap-3 rounded-md px-2.5 py-2 text-left text-sm hover:bg-slate-50", c.code === currency && "bg-brand-50")}
             >

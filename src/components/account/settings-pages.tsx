@@ -17,10 +17,12 @@ import { MEAL_OPTIONS } from "@/data/extras";
 import { CURRENCIES, type CurrencyCode } from "@/lib/engine/currency";
 import { formatDateTimeMed, parseDate, toISODate } from "@/lib/engine/dates";
 import { useAccountStore } from "@/lib/stores/bookings";
-import { useSessionStore, useUiStore, type Preferences } from "@/lib/stores/session";
+import { useSessionStore, type Preferences } from "@/lib/stores/session";
 import type { NotificationKind } from "@/lib/types/booking";
 import { cn } from "@/lib/utils";
 import { emailField, nameField } from "@/lib/validation";
+import { saveProfile,savePreferences,markNotification,markAllNotificationsRead,deleteNotification } from "@/lib/engine/account";
+import { ApiClientError } from "@/lib/api/client";
 import { PageTitle } from "./account-shell";
 
 const KIND_LABEL: Record<NotificationKind, string> = {
@@ -35,9 +37,8 @@ const KIND_LABEL: Record<NotificationKind, string> = {
 
 export function NotificationsPage() {
   const notifications = useAccountStore((s) => s.notifications);
-  const markRead = useAccountStore((s) => s.markRead);
-  const markAllRead = useAccountStore((s) => s.markAllRead);
-  const remove = useAccountStore((s) => s.deleteNotification);
+  const markRead = (id:string,read=true) => markNotification(id,read).catch(error => toast.error(error.message));
+  const remove = (id:string) => deleteNotification(id).catch(error => toast.error(error.message));
   const [tab, setTab] = useState("all");
   const unread = notifications.filter((n) => !n.read).length;
   const shown = notifications.filter((n) => tab === "all" || !n.read).sort((a, b) => b.at.localeCompare(a.at));
@@ -51,9 +52,8 @@ export function NotificationsPage() {
           <Button
             variant="outline"
             disabled={unread === 0}
-            onClick={() => {
-              markAllRead();
-              toast.success("All notifications marked as read");
+            onClick={async () => {
+              try { await markAllNotificationsRead(); toast.success("All notifications marked as read"); } catch(error) { toast.error(error instanceof Error ? error.message : "Please try again."); }
             }}
             leftIcon={<Check className="h-4 w-4" />}
           >
@@ -136,11 +136,8 @@ function SettingsSection({ id, title, className, children }: { id: string; title
 
 export function PreferencesPage() {
   const prefs = useSessionStore((s) => s.preferences);
-  const updatePreferences = useSessionStore((s) => s.updatePreferences);
-  const setCurrency = useUiStore((s) => s.setCurrency);
-  const save = (patch: Partial<Preferences>) => {
-    updatePreferences(patch);
-    toast.success("Preferences saved");
+  const save = async (patch: Partial<Preferences>) => {
+    try { await savePreferences(patch); toast.success("Preferences saved"); } catch(error) { toast.error(error instanceof Error ? error.message : "Please try again."); }
   };
 
   return (
@@ -155,7 +152,6 @@ export function PreferencesPage() {
                 value={prefs.currency}
                 onChange={(e) => {
                   const currency = e.target.value as CurrencyCode;
-                  setCurrency(currency);
                   save({ currency });
                 }}
               >
@@ -275,7 +271,6 @@ const CountryOptions = ({ by }: { by: "code" | "name" }) => (
 
 export function ProfilePage() {
   const profile = useSessionStore((s) => s.profile)!;
-  const updateProfile = useSessionStore((s) => s.updateProfile);
   const form = useForm<ProfileValues>({
     resolver: zodResolver(profileSchema),
     defaultValues: {
@@ -307,24 +302,32 @@ export function ProfilePage() {
       <form
         noValidate
         onSubmit={form.handleSubmit(async (v) => {
-          await new Promise((r) => setTimeout(r, 500));
-          updateProfile({
-            title: v.title,
-            firstName: v.firstName,
-            lastName: v.lastName,
-            dob: v.dob ?? "",
-            gender: v.gender ?? "",
-            nationality: v.nationality ?? "",
-            email: v.email,
-            countryCode: v.countryCode,
-            mobile: v.mobile,
-            address: { line1: v.line1 ?? "", line2: v.line2, city: v.city ?? "", postcode: v.postcode ?? "", country: v.country ?? "" },
-            passportNo: v.passportNo ?? "",
-            passportCountry: v.passportCountry ?? "",
-            passportExpiry: v.passportExpiry ?? "",
-          });
-          form.reset(v);
-          toast.success("Profile saved");
+          try {
+            const saved = await saveProfile({
+              title: v.title,
+              firstName: v.firstName,
+              lastName: v.lastName,
+              dob: v.dob ?? "",
+              gender: v.gender ?? "",
+              nationality: v.nationality ?? "",
+              email: v.email,
+              countryCode: v.countryCode,
+              mobile: v.mobile,
+              address: { line1: v.line1 ?? "", line2: v.line2, city: v.city ?? "", postcode: v.postcode ?? "", country: v.country ?? "" },
+              passportNo: v.passportNo ?? "",
+              passportCountry: v.passportCountry ?? "",
+              passportExpiry: v.passportExpiry ?? "",
+            });
+            const { address, ...values } = saved;
+            form.reset({...values,line1:address.line1,line2:address.line2??"",city:address.city,postcode:address.postcode,country:address.country});
+            toast.success("Profile saved");
+          } catch(error) {
+            if(error instanceof ApiClientError && error.fields) for(const [field,messages] of Object.entries(error.fields)) {
+              const key = field.startsWith("address.") ? field.slice(8) : field;
+              if(key in v) form.setError(key as keyof ProfileValues,{type:"server",message:messages[0]});
+            }
+            toast.error(error instanceof Error ? error.message : "Please try again.");
+          }
         })}
         className="space-y-6"
       >
@@ -363,7 +366,7 @@ export function ProfilePage() {
         </SettingsSection>
         <SettingsSection id="pf-contact" title="Contact information" className="mb-4">
           <div className="grid gap-4 sm:grid-cols-6">
-            <Field label="Email address" htmlFor="pf-email" error={errors.email?.message} required className="sm:col-span-3">
+            <Field label="Email address" htmlFor="pf-email" hint="Contact email for bookings; your verified sign-in email stays the same." error={errors.email?.message} required className="sm:col-span-3">
               <Input id="pf-email" type="email" invalid={!!errors.email} {...form.register("email")} />
             </Field>
             <Field label="Code" htmlFor="pf-cc" className="sm:col-span-1">
@@ -405,7 +408,7 @@ export function ProfilePage() {
           <h2 id="pf-pass" className="mb-1 text-[16px] font-bold">
             Travel document <span className="text-xs font-normal text-slate-400">Optional</span>
           </h2>
-          <p className="mb-4 text-[13px] text-slate-500">Used to pre-fill your passenger details. Stored on this device only in the prototype.</p>
+          <p className="mb-4 text-[13px] text-slate-500">Used to pre-fill your passenger details. Saved to your account for use on your devices.</p>
           <div className="grid gap-4 sm:grid-cols-3">
             <Field label="Passport number" htmlFor="pf-pp" error={errors.passportNo?.message}>
               <Input id="pf-pp" className="uppercase" invalid={!!errors.passportNo} {...form.register("passportNo")} />
@@ -415,8 +418,8 @@ export function ProfilePage() {
                 <CountryOptions by="code" />
               </Select>
             </Field>
-            <Field label="Expiry date" htmlFor="pf-ppe">
-              <Input id="pf-ppe" type="date" min={today} {...form.register("passportExpiry")} />
+            <Field label="Expiry date" htmlFor="pf-ppe" error={errors.passportExpiry?.message}>
+              <Input id="pf-ppe" type="date" invalid={!!errors.passportExpiry} min={today} {...form.register("passportExpiry")} />
             </Field>
           </div>
         </section>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useRef, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Controller, useForm } from "react-hook-form";
@@ -14,9 +14,13 @@ import { Checkbox, Field, Input, Select } from "@/components/ui/form";
 import { Skeleton } from "@/components/ui/primitives";
 import { COUNTRIES } from "@/data/countries";
 import { formatCurrency } from "@/lib/engine/currency";
-import { QA_CARDS, detectCardBrand, luhnValid, outcomeForCard } from "@/lib/engine/payment";
-import { calcFlightPricing, calcHotelPricing, calcUmrahPricing, type PriceBreakdown } from "@/lib/engine/pricing";
-import { getUmrahPackage, resolveUmrahPricingInput } from "@/lib/engine/umrah";
+import { QA_CARDS, detectCardBrand, luhnValid } from "@/lib/engine/payment";
+import { type PriceBreakdown } from "@/lib/engine/pricing";
+import { loadUmrahQuote,umrahQuoteKey } from "@/lib/engine/umrah";
+import { loadFlightQuote,flightQuoteKey } from "@/lib/engine/flights/service";
+import { loadHotelQuote,hotelQuoteKey } from "@/lib/engine/hotels";
+import { checkoutService,checkoutDetails } from "@/lib/engine/checkout";
+import type { Quote } from "@cheaperfly/api-contracts";
 import { useCheckoutStore, useDraftsStore } from "@/lib/stores/drafts";
 import { useHydrated } from "@/lib/stores/hydration";
 import { useSessionStore, useUiStore } from "@/lib/stores/session";
@@ -51,6 +55,7 @@ const METHODS: { id: PaymentMethod; label: string; sub: string; icon: typeof Cre
 ];
 
 interface CheckoutContext {
+  quote: Quote;
   product: "flight" | "hotel" | "umrah";
   breakdown: PriceBreakdown;
   header: ReactNode;
@@ -68,48 +73,37 @@ function useCheckoutContext() {
   const umrah = useDraftsStore((s) => s.umrah);
   const user = useSessionStore((s) => s.user);
   const { currency } = useCurrency();
-  const ctx = useMemo((): CheckoutContext | null => {
-    const product = active ?? (flight ? "flight" : hotel ? "hotel" : umrah ? "umrah" : null);
-    if (product === "flight" && flight && flight.fareId)
-      return {
-        product,
-        breakdown: calcFlightPricing({ offer: flight.offer, fareId: flight.fareId, extras: flight.extras, pax: flight.criteria.pax }, currency, !!user),
-        header: <FlightTripSummary offer={flight.offer} pax={flight.criteria.pax} />,
-        reviewHref: "/flights/book/review",
-        termsAccepted: flight.termsAccepted,
-        payLater: false,
-      };
-    if (product === "hotel" && hotel)
-      return {
-        product,
-        breakdown: calcHotelPricing(hotel.quote, currency, !!user),
-        header: <HotelStaySummary draft={hotel} />,
-        reviewHref: "/hotels/book/review",
-        termsAccepted: hotel.termsAccepted,
-        payLater: hotel.quote.payLater,
-      };
-    if (product === "umrah" && umrah) {
-      const pkg = getUmrahPackage(umrah.packageId);
-      return pkg
-        ? {
-            product,
-            breakdown: calcUmrahPricing(resolveUmrahPricingInput(pkg, umrah.config), currency, !!user),
-            header: <UmrahTripSummary draft={umrah} />,
-            reviewHref: "/umrah/book/review",
-            termsAccepted: umrah.termsAccepted,
-            payLater: false,
-          }
-        : null;
-    }
+  const identity=user?.id??"guest";
+  const product=active??(flight?"flight":hotel?"hotel":umrah?"umrah":null);
+  const key=product==='flight'&&flight?flightQuoteKey(flight,currency,identity):product==='hotel'&&hotel?.searchId?hotelQuoteKey(hotel.searchId,hotel.hotelId,hotel.quote.roomId,hotel.quote.ratePlanId,currency,identity):product==='umrah'&&umrah?umrahQuoteKey(umrah.packageId,umrah.config,currency,identity):"";
+  const [result,setResult]=useState<{key:string;quote?:Quote&{breakdown:PriceBreakdown;payLater?:boolean};error?:string}|null>(null);
+  const [attempt,setAttempt]=useState(0);
+  useEffect(()=>{
+    if(!hydrated||!key)return;
+    let cancelled=false;
+    const pending=product==='flight'&&flight?loadFlightQuote(key,flight,currency):product==='hotel'&&hotel?.searchId?loadHotelQuote(hotel.searchId,hotel.hotelId,hotel.quote.roomId,hotel.quote.ratePlanId,currency,identity):product==='umrah'&&umrah?loadUmrahQuote(umrah.packageId,umrah.config,currency,identity):null;
+    pending?.then(quote=>{if(!cancelled){setResult({key,quote});const store=useDraftsStore.getState();if(quote.product==='flight')store.patchFlight({quote:quote as import('@cheaperfly/api-contracts/flights').FlightQuote});if(quote.product==='hotel')store.patchHotel({serverQuote:quote as import('@cheaperfly/api-contracts/hotels').HotelQuote});if(quote.product==='umrah')store.patchUmrah({serverQuote:quote as import('@cheaperfly/api-contracts/umrah').UmrahQuote});}}).catch((error:Error)=>{if(!cancelled)setResult({key,error:error.message});});
+    return ()=>{cancelled=true;};
+    // The key covers the exact selections, currency and current identity.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  },[hydrated,key,attempt]);
+  const current=result?.key===key?result:null;
+  useEffect(()=>{if(!current?.quote)return;const timer=setTimeout(()=>setAttempt(n=>n+1),Math.max(0,Date.parse(current.quote.expiresAt)-Date.now()));return ()=>clearTimeout(timer);},[current]);
+  const ctx=useMemo(():CheckoutContext|null=>{
+    const quote=current?.quote;if(!quote||!product)return null;
+    if(product==='flight'&&flight&&flight.fareId)return {quote,product,breakdown:quote.breakdown,header:<FlightTripSummary offer={flight.offer} pax={flight.criteria.pax}/>,reviewHref:'/flights/book/review',termsAccepted:flight.termsAccepted,payLater:false};
+    if(product==='hotel'&&hotel)return {quote,product,breakdown:quote.breakdown,header:<HotelStaySummary draft={hotel}/>,reviewHref:'/hotels/book/review',termsAccepted:hotel.termsAccepted,payLater:quote.payLater===true};
+    if(product==='umrah'&&umrah)return {quote,product,breakdown:quote.breakdown,header:<UmrahTripSummary draft={umrah}/>,reviewHref:'/umrah/book/review',termsAccepted:umrah.termsAccepted,payLater:false};
     return null;
-  }, [active, flight, hotel, umrah, currency, user]);
-  return { hydrated, ctx };
+  },[current,product,flight,hotel,umrah]);
+  return { hydrated,ctx,loading:!!key&&!current,error:current?.error,retry:()=>setAttempt(n=>n+1) };
+
 }
 
 /** Shared payment step: card (Luhn-checked) or demo wallets, plus the Demo & QA panel. */
 export function PaymentPage() {
   const router = useRouter();
-  const { hydrated, ctx } = useCheckoutContext();
+  const { hydrated, ctx, loading, error:quoteError, retry } = useCheckoutContext();
   const profile = useSessionStore((s) => s.profile);
   const failure = useCheckoutStore((s) => s.failure);
   const setPending = useCheckoutStore((s) => s.setPending);
@@ -137,7 +131,7 @@ export function PaymentPage() {
   // eslint-disable-next-line react-hooks/incompatible-library -- react-hook-form's watch() is intentionally reactive here
   const brand = detectCardBrand(form.watch("number") ?? "");
 
-  if (!hydrated)
+  if (!hydrated || loading)
     return (
       <div className="container-page py-10">
         <Skeleton className="mb-6 h-8 w-56" />
@@ -147,6 +141,7 @@ export function PaymentPage() {
         </div>
       </div>
     );
+  if(quoteError)return <div className="container-page py-16"><StateView tone="warning" title="We couldn’t refresh your quote" description={quoteError} actions={<><Button onClick={retry}>Try again</Button><ButtonLink href="/flights">Search again</ButtonLink></>} /></div>;
   if (!ctx)
     return (
       <div className="container-page py-16">
@@ -182,22 +177,19 @@ export function PaymentPage() {
   const total = formatCurrency(ctx.breakdown.total, ctx.breakdown.currency, { decimals: 2 });
   const payLabel = ctx.payLater ? `Confirm booking · pay ${total} at the hotel` : `Pay ${total}`;
 
-  function pay(m: PaymentMethod, card?: CardValues) {
-    if (submitted.current || !ctx) return;
-    submitted.current = true;
-    setSubmitting(true);
-    setFailure(null);
-    setPending({
-      product: ctx.product,
-      method: m,
-      brand: card ? detectCardBrand(card.number) : m === "apple_pay" ? "Apple Pay" : "Google Pay",
-      last4: card ? card.number.replace(/\s/g, "").slice(-4) : m === "apple_pay" ? "4242" : "1881",
-      cardholder: card?.cardholder,
-      // "Force the next payment to fail" turns any method into a decline.
-      outcome: failPayment ? "declined" : card ? outcomeForCard(card.number) : "ok",
-      billingCountry: card?.country,
-    });
-    router.push("/checkout/processing");
+  async function pay(m: PaymentMethod, card?: CardValues) {
+    if(submitted.current||!ctx)return;
+    if(Date.parse(ctx.quote.expiresAt)<=Date.now()){retry();setFailure({code:"quote_expired",message:"Your quote has expired. Please wait for the refreshed price or return to review."});return;}
+    if(useCheckoutStore.getState().pending){router.push('/checkout/processing');return;}
+    submitted.current=true;setSubmitting(true);setFailure(null);
+    // PAN is transient in the tokenization request. CVV, billing address and expiry stay in the form.
+    const number=card?.number;
+    form.resetField('number');form.resetField('cvv');form.resetField('expiry');
+    try {
+      const instrument=await checkoutService.tokenize({method:m,...(number?{number}:{}),...(failPayment&&process.env.NODE_ENV!=='production'?{testScenario:'declined' as const}:{})});
+      setPending({product:ctx.product,request:{quoteId:ctx.quote.id,quoteRevision:ctx.quote.revision,idempotencyKey:crypto.randomUUID(),paymentReference:instrument.paymentReference,termsAccepted:true,details:checkoutDetails(ctx.product)}});
+      setFailPayment(false);router.push('/checkout/processing');
+    }catch(error){setFailure({code:'payment_failed',message:error instanceof Error?error.message:'Could not prepare the simulated payment.'});submitted.current=false;setSubmitting(false);}
   }
 
   const summary = <SummaryPanel header={ctx.header} breakdown={ctx.breakdown} />;
@@ -368,7 +360,7 @@ export function PaymentPage() {
               )}
               <p className="mt-4 flex items-start gap-2 text-xs leading-relaxed text-slate-500">
                 <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" aria-hidden />
-                Payments are encrypted and processed over a secure connection. In this prototype no card is charged and card details are never stored. By paying you agree to our{" "}
+                Payments are simulated. No real card is charged, and card numbers and CVV are never stored. By paying you agree to our{" "}
                 <Link href="/legal/terms" target="_blank" className="font-semibold text-brand-600 underline">
                   Terms
                 </Link>
@@ -401,6 +393,7 @@ export function PaymentPage() {
               </ul>
               <Checkbox
                 checked={failPayment}
+                disabled={process.env.NODE_ENV==="production"}
                 onChange={(e) => setFailPayment(e.target.checked)}
                 label="Force the next payment to fail"
                 description="Simulates a declined payment so you can test the recovery path."

@@ -1,4 +1,4 @@
-/** Simulated card and wallet payments. No card data leaves the browser and nothing is charged. */
+/** Legacy local simulation retained for regression fixtures. Production checkout uses the backend checkout service. */
 import { newTxnId } from "@/lib/engine/refs";
 import { ServiceError, sleep } from "@/lib/engine/service";
 import type { CurrencyCode } from "@/lib/engine/currency";

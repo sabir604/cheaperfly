@@ -6,6 +6,9 @@ import { useRouter } from "next/navigation";
 import { ArrowRight } from "lucide-react";
 import { BaggageChips, LegRow } from "@/components/flights/leg";
 import { useCurrency } from "@/components/money";
+import { InlineNotice } from "@/components/ui/feedback";
+import { flightQuoteKey, loadFlightQuote } from "@/lib/engine/flights/service";
+import { useSessionStore } from "@/lib/stores/session";
 import { Button } from "@/components/ui/button";
 import { countryName } from "@/data/countries";
 import { ASSISTANCE_OPTIONS, baggageOptionById, mealOptionById } from "@/data/extras";
@@ -20,7 +23,10 @@ import { TYPE_LABEL } from "./traveller-fields";
 
 function ReviewPage({ draft, breakdown }: { draft: FlightDraft; breakdown: PriceBreakdown }) {
   const router = useRouter();
-  const { gbp, fmt } = useCurrency();
+  const { gbp, fmt, currency } = useCurrency();
+  const user = useSessionStore((s) => s.user);
+  const [checking, setChecking] = useState(false);
+  const [quoteError, setQuoteError] = useState<string | null>(null);
   const patchFlight = useDraftsStore((s) => s.patchFlight);
   const setActive = useDraftsStore((s) => s.setActive);
   const [termsError, setTermsError] = useState(false);
@@ -37,20 +43,31 @@ function ReviewPage({ draft, breakdown }: { draft: FlightDraft; breakdown: Price
     leg.segments.flatMap((seg) => Object.entries(draft.extras.seats[seg.id] ?? {}).map(([paxId, sel]) => ({ seg, p: draft.passengers.find((x) => x.id === paxId)!, sel }))),
   );
 
-  const onContinue = () => {
+  const onContinue = async () => {
     if (missingNames) return router.push("/flights/book/passengers");
     if (!draft.termsAccepted) {
       setTermsError(true);
       document.getElementById("terms")?.focus();
       return;
     }
-    setActive("flight");
-    router.push("/checkout/payment");
+    setChecking(true);
+    setQuoteError(null);
+    try {
+      const quote = await loadFlightQuote(flightQuoteKey(draft, currency, user?.id ?? "guest"), draft, currency);
+      patchFlight({ quote });
+      setActive("flight");
+      router.push("/checkout/payment");
+    } catch (error) {
+      setQuoteError(error instanceof Error ? error.message : "Could not refresh this fare.");
+    } finally {
+      setChecking(false);
+    }
   };
 
   const summary = <FlightTripSummary offer={draft.offer} pax={draft.criteria.pax} />;
   return (
     <div className="container-page py-8">
+      {quoteError && <InlineNotice tone="error">{quoteError}</InlineNotice>}
       <div className="mb-6">
         <h1 className="text-2xl font-extrabold sm:text-3xl">Review your booking</h1>
         <p className="mt-1 text-slate-600">Check everything carefully. Use Edit on any section to change it — your other choices are kept.</p>
@@ -184,7 +201,7 @@ function ReviewPage({ draft, breakdown }: { draft: FlightDraft; breakdown: Price
             <Link href="/flights/book/seats" className="text-center text-sm font-semibold text-slate-600 hover:text-brand-600">
               ← Back to seats
             </Link>
-            <Button size="xl" onClick={onContinue} rightIcon={<ArrowRight className="h-4 w-4" />}>
+            <Button size="xl" onClick={onContinue} loading={checking} rightIcon={<ArrowRight className="h-4 w-4" />}>
               Continue to payment
             </Button>
           </div>
